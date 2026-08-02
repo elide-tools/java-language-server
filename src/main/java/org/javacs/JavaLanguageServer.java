@@ -28,6 +28,7 @@ import org.javacs.navigation.ImplementationProvider;
 import org.javacs.navigation.TypeDefinitionProvider;
 import org.javacs.navigation.DocumentHighlightProvider;
 import org.javacs.navigation.SelectionRangeProvider;
+import org.javacs.markup.SemanticTokensProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -210,6 +211,17 @@ class JavaLanguageServer extends LanguageServer {
         c.addProperty("declarationProvider", true);
         c.addProperty("documentHighlightProvider", true);
         c.addProperty("selectionRangeProvider", true);
+        var semanticTokensOptions = new JsonObject();
+        var semanticTokensLegend = new JsonObject();
+        var tokenTypes = new JsonArray();
+        for (var type : SemanticTokensProvider.TOKEN_TYPES) {
+            tokenTypes.add(type);
+        }
+        semanticTokensLegend.add("tokenTypes", tokenTypes);
+        semanticTokensLegend.add("tokenModifiers", new JsonArray());
+        semanticTokensOptions.add("legend", semanticTokensLegend);
+        semanticTokensOptions.addProperty("full", true);
+        c.add("semanticTokensProvider", semanticTokensOptions);
 
         return new InitializeResult(c);
     }
@@ -391,6 +403,14 @@ class JavaLanguageServer extends LanguageServer {
         if (!FileStore.isJavaFile(params.textDocument.uri)) return List.of();
         var file = Paths.get(params.textDocument.uri);
         return new SelectionRangeProvider(compiler(), file).find(params.positions);
+    }
+
+    @Override
+    public Optional<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return Optional.empty();
+        var file = Paths.get(params.textDocument.uri);
+        var data = new SemanticTokensProvider(compiler()).tokens(file);
+        return Optional.of(new SemanticTokens(data));
     }
 
     @Override
