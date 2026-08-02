@@ -25,6 +25,7 @@ import org.javacs.markup.ErrorProvider;
 import org.javacs.navigation.DefinitionProvider;
 import org.javacs.navigation.ReferenceProvider;
 import org.javacs.navigation.ImplementationProvider;
+import org.javacs.navigation.TypeDefinitionProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -203,6 +204,7 @@ class JavaLanguageServer extends LanguageServer {
         renameOptions.addProperty("prepareProvider", true);
         c.add("renameProvider", renameOptions);
         c.addProperty("implementationProvider", true);
+        c.addProperty("typeDefinitionProvider", true);
 
         return new InitializeResult(c);
     }
@@ -351,6 +353,17 @@ class JavaLanguageServer extends LanguageServer {
         var column = position.position.character + 1;
         var found = new ImplementationProvider(compiler(), file, line, column).find();
         if (found == ImplementationProvider.NOT_SUPPORTED) return Optional.empty();
+        return Optional.of(found);
+    }
+
+    @Override
+    public Optional<List<Location>> typeDefinition(TextDocumentPositionParams position) {
+        if (!FileStore.isJavaFile(position.textDocument.uri)) return Optional.empty();
+        var file = Paths.get(position.textDocument.uri);
+        var line = position.position.line + 1;
+        var column = position.position.character + 1;
+        var found = new TypeDefinitionProvider(compiler(), file, line, column).find();
+        if (found == TypeDefinitionProvider.NOT_SUPPORTED) return Optional.empty();
         return Optional.of(found);
     }
 
