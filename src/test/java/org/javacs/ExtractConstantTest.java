@@ -7,12 +7,12 @@ import java.util.List;
 import org.javacs.lsp.*;
 import org.junit.Test;
 
-public class ExtractVariableTest {
+public class ExtractConstantTest {
     private static final JavaLanguageServer server = LanguageServerFixture.getJavaLanguageServer();
 
     @Test
-    public void extractsSelectedExpression() {
-        var uri = FindResource.uri("/org/javacs/example/ExtractExample.java");
+    public void extractsSelectedExpressionToConstant() {
+        var uri = FindResource.uri("/org/javacs/example/ExtractConstantExample.java");
         var params = new CodeActionParams();
         params.textDocument = new TextDocumentIdentifier(uri);
         // select `3 * 4` in `return 2 + 3 * 4;`
@@ -21,24 +21,24 @@ public class ExtractVariableTest {
 
         CodeAction action = null;
         for (var a : server.codeAction(params)) {
-            if (a.title.toLowerCase().contains("variable")) action = a;
+            if (a.title.toLowerCase().contains("constant")) action = a;
         }
         assertThat(action, notNullValue());
-        assertThat(action.title.toLowerCase(), containsString("extract"));
+        assertThat(action.kind, equalTo(CodeActionKind.RefactorExtract));
         // listing is lazy: no edit until resolved
         assertThat(action.edit, nullValue());
 
         var resolved = server.resolveCodeAction(action);
         assertThat(resolved.edit, notNullValue());
         var edits = resolved.edit.changes.values().iterator().next();
-        // one edit introduces the local, the other replaces the selection with its name
+        // one edit introduces the constant field, the other replaces the selection with its name
         var declares = false;
         var replaces = false;
         for (var e : edits) {
-            if (e.newText.contains("var extracted = 3 * 4")) declares = true;
-            if (e.newText.equals("extracted")) replaces = true;
+            if (e.newText.contains("private static final int EXTRACTED_CONSTANT = 3 * 4")) declares = true;
+            if (e.newText.equals("EXTRACTED_CONSTANT")) replaces = true;
         }
-        assertThat("introduces local", declares, equalTo(true));
+        assertThat("introduces constant", declares, equalTo(true));
         assertThat("replaces selection", replaces, equalTo(true));
     }
 }

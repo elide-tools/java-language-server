@@ -256,6 +256,25 @@ def t_extract_variable(s):
     return any("var extracted = s.area()" in t for t in texts), f"{texts}"
 
 
+def t_extract_constant(s):
+    start = s.pos("ExtractConstant.java", "return 2 + 3 * 4;", "3 * 4")
+    end = {"line": start["line"], "character": start["character"] + len("3 * 4")}
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("ExtractConstant.java")},
+        "range": {"start": start, "end": end},
+        "context": {"diagnostics": [], "only": ["refactor.extract"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "constant" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any("EXTRACTED_CONSTANT = 3 * 4" in t for t in texts), f"{texts}"
+
+
 def t_inline_variable(s):
     var = s.pos("Inline.java", "int sum = a + b;", "sum")
     r = s.req("textDocument/codeAction", {
@@ -309,6 +328,7 @@ TESTS = [
     ("codeAction: organizeImports", "B", "baseline", t_organize_imports),
     ("codeAction: add overrides", "T1", "baseline", t_add_overrides),
     ("codeAction: extract variable", "T1", "baseline", t_extract_variable),
+    ("codeAction: extract constant", "T1", "baseline", t_extract_constant),
     ("codeAction: inline variable", "T1", "baseline", t_inline_variable),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
