@@ -333,6 +333,24 @@ def t_inline_method(s):
     return any(t == "((n + 1) * 2)" for t in texts), f"{texts}"
 
 
+def t_inline_field(s):
+    cur = s.pos("InlineField.java", "private static final int FACTOR = 3;", "FACTOR")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("InlineField.java")},
+        "range": {"start": cur, "end": cur},
+        "context": {"diagnostics": [], "only": ["refactor.inline"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "field" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any(t == "3" for t in texts) and any(t == "" for t in texts), f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -372,6 +390,7 @@ TESTS = [
     ("codeAction: extract method", "T1", "baseline", t_extract_method),
     ("codeAction: inline variable", "T1", "baseline", t_inline_variable),
     ("codeAction: inline method", "T1", "baseline", t_inline_method),
+    ("codeAction: inline field", "T1", "baseline", t_inline_field),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 
