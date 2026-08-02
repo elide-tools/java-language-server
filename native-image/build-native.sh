@@ -14,6 +14,17 @@ SVM_CLASSES="${REPO}/native-image/svm/classes"
 OUT_DIR="${REPO}/native-image/build"
 mkdir -p "${OUT_DIR}"
 
+# Compile the SVM build-time classes (Feature + substitution) against the
+# builder jars. Kept in-script so the image build is reproducible from source.
+mkdir -p "${SVM_CLASSES}"
+"${JAVA_HOME}/bin/javac" \
+  --add-modules org.graalvm.nativeimage \
+  --add-exports jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED \
+  --add-exports java.base/jdk.internal.jrtfs=ALL-UNNAMED \
+  -cp "${JAVA_HOME}/lib/svm/builder/*:${REPO}/dist/classpath/*" \
+  -d "${SVM_CLASSES}" \
+  "${REPO}"/native-image/svm/*.java
+
 exec "${NI}" \
   -J--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.jdk.buildtimeinit=ALL-UNNAMED \
   --no-fallback \
