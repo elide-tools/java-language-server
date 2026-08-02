@@ -256,6 +256,24 @@ def t_extract_variable(s):
     return any("var extracted = s.area()" in t for t in texts), f"{texts}"
 
 
+def t_inline_variable(s):
+    var = s.pos("Inline.java", "int sum = a + b;", "sum")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("Inline.java")},
+        "range": {"start": var, "end": var},
+        "context": {"diagnostics": [], "only": ["refactor.inline"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if a.get("kind") == "refactor.inline"), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any(t == "(a + b)" for t in texts), f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -291,6 +309,7 @@ TESTS = [
     ("codeAction: organizeImports", "B", "baseline", t_organize_imports),
     ("codeAction: add overrides", "T1", "baseline", t_add_overrides),
     ("codeAction: extract variable", "T1", "baseline", t_extract_variable),
+    ("codeAction: inline variable", "T1", "baseline", t_inline_variable),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 
