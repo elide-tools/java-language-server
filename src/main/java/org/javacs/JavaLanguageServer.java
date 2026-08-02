@@ -26,6 +26,7 @@ import org.javacs.navigation.DefinitionProvider;
 import org.javacs.navigation.ReferenceProvider;
 import org.javacs.navigation.ImplementationProvider;
 import org.javacs.navigation.TypeDefinitionProvider;
+import org.javacs.navigation.DocumentHighlightProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -206,6 +207,7 @@ class JavaLanguageServer extends LanguageServer {
         c.addProperty("implementationProvider", true);
         c.addProperty("typeDefinitionProvider", true);
         c.addProperty("declarationProvider", true);
+        c.addProperty("documentHighlightProvider", true);
 
         return new InitializeResult(c);
     }
@@ -371,6 +373,15 @@ class JavaLanguageServer extends LanguageServer {
     @Override
     public Optional<List<Location>> declaration(TextDocumentPositionParams position) {
         return gotoDefinition(position);
+    }
+
+    @Override
+    public List<DocumentHighlight> documentHighlight(TextDocumentPositionParams position) {
+        if (!FileStore.isJavaFile(position.textDocument.uri)) return List.of();
+        var file = Paths.get(position.textDocument.uri);
+        var line = position.position.line + 1;
+        var column = position.position.character + 1;
+        return new DocumentHighlightProvider(compiler(), file, line, column).find();
     }
 
     @Override

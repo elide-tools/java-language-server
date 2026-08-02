@@ -128,5 +128,9 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public List<DocumentHighlight> documentHighlight(TextDocumentPositionParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }
