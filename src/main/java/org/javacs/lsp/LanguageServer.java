@@ -132,5 +132,9 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public List<SelectionRange> selectionRange(SelectionRangeParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }

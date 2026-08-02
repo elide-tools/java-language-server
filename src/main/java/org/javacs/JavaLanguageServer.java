@@ -27,6 +27,7 @@ import org.javacs.navigation.ReferenceProvider;
 import org.javacs.navigation.ImplementationProvider;
 import org.javacs.navigation.TypeDefinitionProvider;
 import org.javacs.navigation.DocumentHighlightProvider;
+import org.javacs.navigation.SelectionRangeProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -208,6 +209,7 @@ class JavaLanguageServer extends LanguageServer {
         c.addProperty("typeDefinitionProvider", true);
         c.addProperty("declarationProvider", true);
         c.addProperty("documentHighlightProvider", true);
+        c.addProperty("selectionRangeProvider", true);
 
         return new InitializeResult(c);
     }
@@ -382,6 +384,13 @@ class JavaLanguageServer extends LanguageServer {
         var line = position.position.line + 1;
         var column = position.position.character + 1;
         return new DocumentHighlightProvider(compiler(), file, line, column).find();
+    }
+
+    @Override
+    public List<SelectionRange> selectionRange(SelectionRangeParams params) {
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return List.of();
+        var file = Paths.get(params.textDocument.uri);
+        return new SelectionRangeProvider(compiler(), file).find(params.positions);
     }
 
     @Override

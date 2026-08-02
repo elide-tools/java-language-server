@@ -419,6 +419,13 @@ public class LSP {
                             respond(send, r.id, response);
                             break;
                         }
+                    case "textDocument/selectionRange":
+                        {
+                            var params = gson.fromJson(r.params, SelectionRangeParams.class);
+                            var response = server.selectionRange(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
                     case "textDocument/documentSymbol":
                         {
                             var params = gson.fromJson(r.params, DocumentSymbolParams.class);
