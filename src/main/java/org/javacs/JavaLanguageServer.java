@@ -674,7 +674,9 @@ class JavaLanguageServer extends LanguageServer {
     public List<CodeAction> codeAction(CodeActionParams params) {
         var provider = new CodeActionProvider(compiler());
         if (params.context.diagnostics.isEmpty()) {
-            return provider.codeActionsForCursor(params);
+            var actions = new ArrayList<CodeAction>(provider.codeActionsForCursor(params));
+            actions.addAll(provider.sourceActions(params));
+            return actions;
         } else {
             return provider.codeActionForDiagnostics(params);
         }

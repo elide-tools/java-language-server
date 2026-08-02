@@ -51,6 +51,55 @@ public class CodeActionProvider {
         return actions;
     }
 
+    /** Source actions (member generation) offered independent of diagnostics. */
+    public List<CodeAction> sourceActions(CodeActionParams params) {
+        var only = params.context.only;
+        var actions = new ArrayList<CodeAction>();
+        var file = Paths.get(params.textDocument.uri);
+        if (wants(only, CodeActionKind.Source)) {
+            String simpleName = null;
+            try (var task = compiler.compile(file)) {
+                simpleName = findClassForSource(task, params.range);
+            }
+            if (simpleName != null) {
+                addGenerated(actions, "Generate constructor", new GenerateConstructor(file, simpleName));
+                addGenerated(actions, "Generate getters and setters", new GenerateGettersAndSetters(file, simpleName));
+            }
+        }
+        return actions;
+    }
+
+    /** Whether an action of {@code kind} was requested by the client's {@code only} filter. */
+    private boolean wants(List<String> only, String kind) {
+        if (only == null || only.isEmpty()) return true;
+        for (var k : only) {
+            if (kind.equals(k) || kind.startsWith(k + ".")) return true;
+        }
+        return false;
+    }
+
+    private String findClassForSource(CompileTask task, Range range) {
+        var byCursor = findClassTree(task, range);
+        if (byCursor != null) return byCursor.getSimpleName().toString();
+        for (var decl : task.root().getTypeDecls()) {
+            if (decl instanceof ClassTree) return ((ClassTree) decl).getSimpleName().toString();
+        }
+        return null;
+    }
+
+    private void addGenerated(List<CodeAction> actions, String title, Rewrite rewrite) {
+        var edits = rewrite.rewrite(compiler);
+        if (edits == Rewrite.CANCELLED || edits.isEmpty()) return;
+        var a = new CodeAction();
+        a.kind = CodeActionKind.Source;
+        a.title = title;
+        a.edit = new WorkspaceEdit();
+        for (var f : edits.keySet()) {
+            a.edit.changes.put(f.toUri(), List.of(edits.get(f)));
+        }
+        actions.add(a);
+    }
+
     private Map<String, Rewrite> overrideInheritedMethods(CompileTask task, Path file, long cursor) {
         if (!isBlankLine(task.root(), cursor)) return Map.of();
         if (isInMethod(task, cursor)) return Map.of();
