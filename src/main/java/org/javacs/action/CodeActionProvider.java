@@ -79,6 +79,20 @@ public class CodeActionProvider {
                 d.addProperty("position", (int) cursor);
                 actions.add(lazyAction("Inline field", CodeActionKind.RefactorInline, d, null));
             }
+            if (wants(params.context.only, CodeActionKind.RefactorRewrite)) {
+                var current = ChangeMethodAccess.currentAccess(task, (int) cursor);
+                if (current != null) {
+                    for (var level : ACCESS_LEVELS) {
+                        if (level[0].equals(current)) continue;
+                        var d = new JsonObject();
+                        d.addProperty("type", "ChangeMethodAccess");
+                        d.addProperty("file", file.toString());
+                        d.addProperty("position", (int) cursor);
+                        d.addProperty("access", level[0]);
+                        actions.add(lazyAction("Make method " + level[1], CodeActionKind.RefactorRewrite, d, null));
+                    }
+                }
+            }
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
         LOG.info(String.format("...created %d actions in %d ms", actions.size(), elapsed));
@@ -598,6 +612,8 @@ public class CodeActionProvider {
                 return new InlineMethod(dataPath(d), d.get("position").getAsInt());
             case "InlineField":
                 return new InlineField(dataPath(d), d.get("position").getAsInt());
+            case "ChangeMethodAccess":
+                return new ChangeMethodAccess(dataPath(d), d.get("position").getAsInt(), d.get("access").getAsString());
             case "OverrideInheritedMethod":
                 return new OverrideInheritedMethod(
                         d.get("className").getAsString(),
@@ -610,6 +626,14 @@ public class CodeActionProvider {
                 return Rewrite.NOT_SUPPORTED;
         }
     }
+
+    /** Access levels in menu order: {modifier keyword, display label}. */
+    private static final String[][] ACCESS_LEVELS = {
+        {"public", "public"},
+        {"protected", "protected"},
+        {"", "package-private"},
+        {"private", "private"},
+    };
 
     private static Path dataPath(JsonObject d) {
         return Paths.get(d.get("file").getAsString());
