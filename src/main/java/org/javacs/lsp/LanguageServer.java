@@ -144,5 +144,17 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public List<CallHierarchyItem> prepareCallHierarchy(TextDocumentPositionParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public List<CallHierarchyIncomingCall> callHierarchyIncoming(CallHierarchyIncomingCallsParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public List<CallHierarchyOutgoingCall> callHierarchyOutgoing(CallHierarchyOutgoingCallsParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }

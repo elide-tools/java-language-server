@@ -30,6 +30,7 @@ import org.javacs.navigation.DocumentHighlightProvider;
 import org.javacs.navigation.SelectionRangeProvider;
 import org.javacs.markup.SemanticTokensProvider;
 import org.javacs.navigation.InlayHintProvider;
+import org.javacs.navigation.CallHierarchyProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -224,6 +225,7 @@ class JavaLanguageServer extends LanguageServer {
         semanticTokensOptions.addProperty("full", true);
         c.add("semanticTokensProvider", semanticTokensOptions);
         c.addProperty("inlayHintProvider", true);
+        c.addProperty("callHierarchyProvider", true);
 
         return new InitializeResult(c);
     }
@@ -420,6 +422,27 @@ class JavaLanguageServer extends LanguageServer {
         if (!FileStore.isJavaFile(params.textDocument.uri)) return List.of();
         var file = Paths.get(params.textDocument.uri);
         return new InlayHintProvider(compiler(), file).inlayHints(params.range);
+    }
+
+    @Override
+    public List<CallHierarchyItem> prepareCallHierarchy(TextDocumentPositionParams position) {
+        if (!FileStore.isJavaFile(position.textDocument.uri)) return List.of();
+        var file = Paths.get(position.textDocument.uri);
+        var line = position.position.line + 1;
+        var column = position.position.character + 1;
+        return new CallHierarchyProvider(compiler()).prepare(file, line, column);
+    }
+
+    @Override
+    public List<CallHierarchyIncomingCall> callHierarchyIncoming(CallHierarchyIncomingCallsParams params) {
+        if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
+        return new CallHierarchyProvider(compiler()).incoming(params.item);
+    }
+
+    @Override
+    public List<CallHierarchyOutgoingCall> callHierarchyOutgoing(CallHierarchyOutgoingCallsParams params) {
+        if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
+        return new CallHierarchyProvider(compiler()).outgoing(params.item);
     }
 
     @Override

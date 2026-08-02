@@ -440,6 +440,27 @@ public class LSP {
                             respond(send, r.id, response);
                             break;
                         }
+                    case "textDocument/prepareCallHierarchy":
+                        {
+                            var params = gson.fromJson(r.params, TextDocumentPositionParams.class);
+                            var response = server.prepareCallHierarchy(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
+                    case "callHierarchy/incomingCalls":
+                        {
+                            var params = gson.fromJson(r.params, CallHierarchyIncomingCallsParams.class);
+                            var response = server.callHierarchyIncoming(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
+                    case "callHierarchy/outgoingCalls":
+                        {
+                            var params = gson.fromJson(r.params, CallHierarchyOutgoingCallsParams.class);
+                            var response = server.callHierarchyOutgoing(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
                     case "textDocument/documentSymbol":
                         {
                             var params = gson.fromJson(r.params, DocumentSymbolParams.class);
