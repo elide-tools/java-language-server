@@ -13,6 +13,34 @@ in `native-image/smoke/features/feature_tests.py` (tagged `target`, currently
 RED) that flips to `baseline` (GREEN) when the feature lands, and a note on
 mirroring the assertion into the Elide test suite.
 
+## Status (2026-08-01) — Phase A landed
+
+INFRA-1 and all five Phase-A features are implemented, committed one-per-commit
+with a JUnit test each, and **green in the native image** (acceptance harness
+`smoke/features/feature_tests.py`: 5/5 Phase-A targets now `baseline`; full JVM
+suite 251 tests, 0 failures):
+
+- **INFRA-1** — `JlsNativeImageFeature` blanket-registers all `org.javacs.lsp.*`
+  DTOs for reflection (discovered from the code source at build time). This
+  removed the `MissingReflectionRegistrationError` class of crashes; the new
+  `SelectionRange`/`SelectionRangeParams`/`DocumentHighlight` DTOs serialize
+  in-image with no per-field agent runs.
+- **A1 implementation**, **A2 typeDefinition**, **A3 declaration**,
+  **A4 documentHighlight**, **A5 selectionRange** — done.
+- **A6 formatting** — still a `target`; deferred to Elide's google-java-format.
+
+Two native-image / javac lessons worth carrying into Phase B:
+
+1. **`Elements.getTypeElement` returns null for unnamed-package types.** Resolve
+   type declarations by walking the compiled trees (or via
+   `CompilerProvider.findAnywhere`, which also covers the doc path + type index),
+   not `getTypeElement`. A named-package JUnit fixture masks this; the
+   default-package in-image harness caught it (typeDefinition).
+2. **`CompilerProvider.findTypeDeclaration` is not a substitute for
+   `findAnywhere`.** It missed the default-package interface that `findAnywhere`
+   (used by goto-definition) resolves. Prefer `findAnywhere` for cross-file type
+   lookup.
+
 ## Why this is the right shape
 
 - JLS is built directly on **javac** (`com.sun.source.tree`, `javax.lang.model`,
