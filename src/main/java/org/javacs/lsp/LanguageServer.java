@@ -124,5 +124,9 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public Optional<List<Location>> declaration(TextDocumentPositionParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }

@@ -205,6 +205,7 @@ class JavaLanguageServer extends LanguageServer {
         c.add("renameProvider", renameOptions);
         c.addProperty("implementationProvider", true);
         c.addProperty("typeDefinitionProvider", true);
+        c.addProperty("declarationProvider", true);
 
         return new InitializeResult(c);
     }
@@ -365,6 +366,11 @@ class JavaLanguageServer extends LanguageServer {
         var found = new TypeDefinitionProvider(compiler(), file, line, column).find();
         if (found == TypeDefinitionProvider.NOT_SUPPORTED) return Optional.empty();
         return Optional.of(found);
+    }
+
+    @Override
+    public Optional<List<Location>> declaration(TextDocumentPositionParams position) {
+        return gotoDefinition(position);
     }
 
     @Override
