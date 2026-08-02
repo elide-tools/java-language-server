@@ -1,0 +1,6 @@
+# native-image build outputs (regenerable)
+build/
+svm/classes/
+probe/out/
+probe/jrtprobe
+**/__pycache__/

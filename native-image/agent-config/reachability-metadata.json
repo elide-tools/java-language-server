@@ -1,0 +1,885 @@
+{
+  "reflection": [
+    {
+      "type": "com.sun.tools.javac.api.JavacTaskImpl",
+      "methods": [
+        {
+          "name": "cleanup",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.tools.javac.api.JavacTrees",
+      "methods": [
+        {
+          "name": "instance",
+          "parameterTypes": [
+            "javax.tools.JavaCompiler$CompilationTask"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.ClassLoader",
+      "fields": [
+        {
+          "name": "classLoaderValueMap"
+        }
+      ]
+    },
+    {
+      "type": "java.lang.String[]"
+    },
+    {
+      "type": "java.lang.reflect.AccessibleObject"
+    },
+    {
+      "type": "java.sql.Date"
+    },
+    {
+      "type": "java.util.ArrayList"
+    },
+    {
+      "type": "java.util.ImmutableCollections$List12"
+    },
+    {
+      "type": "java.util.List"
+    },
+    {
+      "type": "java.util.Map"
+    },
+    {
+      "type": "javax.tools.JavaCompiler$CompilationTask"
+    },
+    {
+      "type": "jdk.internal.jrtfs.JrtFileSystemProvider"
+    },
+    {
+      "type": "jdk.internal.misc.Unsafe"
+    },
+    {
+      "type": "org.javacs.CompletionData",
+      "fields": [
+        {
+          "name": "className"
+        },
+        {
+          "name": "erasedParameterTypes"
+        },
+        {
+          "name": "memberName"
+        },
+        {
+          "name": "plusOverloads"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.CodeActionContext",
+      "fields": [
+        {
+          "name": "diagnostics"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.CodeActionParams",
+      "fields": [
+        {
+          "name": "context"
+        },
+        {
+          "name": "range"
+        },
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.CodeLensParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Command"
+    },
+    {
+      "type": "org.javacs.lsp.CompletionItem",
+      "fields": [
+        {
+          "name": "additionalTextEdits"
+        },
+        {
+          "name": "command"
+        },
+        {
+          "name": "commitCharacters"
+        },
+        {
+          "name": "data"
+        },
+        {
+          "name": "deprecated"
+        },
+        {
+          "name": "detail"
+        },
+        {
+          "name": "documentation"
+        },
+        {
+          "name": "filterText"
+        },
+        {
+          "name": "insertText"
+        },
+        {
+          "name": "insertTextFormat"
+        },
+        {
+          "name": "kind"
+        },
+        {
+          "name": "label"
+        },
+        {
+          "name": "preselect"
+        },
+        {
+          "name": "sortText"
+        },
+        {
+          "name": "textEdit"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.CompletionList",
+      "fields": [
+        {
+          "name": "isIncomplete"
+        },
+        {
+          "name": "items"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Diagnostic",
+      "fields": [
+        {
+          "name": "code"
+        },
+        {
+          "name": "message"
+        },
+        {
+          "name": "range"
+        },
+        {
+          "name": "severity"
+        },
+        {
+          "name": "source"
+        },
+        {
+          "name": "tags"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DidChangeTextDocumentParams",
+      "fields": [
+        {
+          "name": "contentChanges"
+        },
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DidOpenTextDocumentParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DidSaveTextDocumentParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DocumentFormattingParams",
+      "fields": [
+        {
+          "name": "options"
+        },
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DocumentLinkParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.DocumentSymbolParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.FoldingRange",
+      "fields": [
+        {
+          "name": "endCharacter"
+        },
+        {
+          "name": "endLine"
+        },
+        {
+          "name": "kind"
+        },
+        {
+          "name": "startCharacter"
+        },
+        {
+          "name": "startLine"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.FoldingRangeParams",
+      "fields": [
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.FormattingOptions",
+      "fields": [
+        {
+          "name": "insertSpaces"
+        },
+        {
+          "name": "tabSize"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Hover",
+      "fields": [
+        {
+          "name": "contents"
+        },
+        {
+          "name": "range"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.InitializeParams",
+      "fields": [
+        {
+          "name": "processId"
+        },
+        {
+          "name": "rootUri"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.InitializeResult",
+      "fields": [
+        {
+          "name": "capabilities"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.JavaReportProgressParams",
+      "fields": [
+        {
+          "name": "increment"
+        },
+        {
+          "name": "message"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.JavaStartProgressParams",
+      "fields": [
+        {
+          "name": "message"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Location",
+      "fields": [
+        {
+          "name": "range"
+        },
+        {
+          "name": "uri"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.MarkedString$Adapter",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.MarkupContent",
+      "fields": [
+        {
+          "name": "kind"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Message",
+      "fields": [
+        {
+          "name": "id"
+        },
+        {
+          "name": "jsonrpc"
+        },
+        {
+          "name": "method"
+        },
+        {
+          "name": "params"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.ParameterInformation",
+      "fields": [
+        {
+          "name": "documentation"
+        },
+        {
+          "name": "label"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Position",
+      "fields": [
+        {
+          "name": "character"
+        },
+        {
+          "name": "line"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.PublishDiagnosticsParams",
+      "fields": [
+        {
+          "name": "diagnostics"
+        },
+        {
+          "name": "uri"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.Range",
+      "fields": [
+        {
+          "name": "end"
+        },
+        {
+          "name": "start"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.ReferenceContext",
+      "fields": [
+        {
+          "name": "includeDeclaration"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.ReferenceParams",
+      "fields": [
+        {
+          "name": "context"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.RegistrationParams",
+      "fields": [
+        {
+          "name": "registrations"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.RegistrationParams$Registration",
+      "fields": [
+        {
+          "name": "id"
+        },
+        {
+          "name": "method"
+        },
+        {
+          "name": "registerOptions"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.RenameParams",
+      "fields": [
+        {
+          "name": "newName"
+        },
+        {
+          "name": "position"
+        },
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.ResponseError",
+      "fields": [
+        {
+          "name": "code"
+        },
+        {
+          "name": "data"
+        },
+        {
+          "name": "message"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.SignatureHelp",
+      "fields": [
+        {
+          "name": "activeParameter"
+        },
+        {
+          "name": "activeSignature"
+        },
+        {
+          "name": "signatures"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.SignatureInformation",
+      "fields": [
+        {
+          "name": "documentation"
+        },
+        {
+          "name": "label"
+        },
+        {
+          "name": "parameters"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.SymbolInformation",
+      "fields": [
+        {
+          "name": "containerName"
+        },
+        {
+          "name": "deprecated"
+        },
+        {
+          "name": "kind"
+        },
+        {
+          "name": "location"
+        },
+        {
+          "name": "name"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.TextDocumentContentChangeEvent",
+      "fields": [
+        {
+          "name": "text"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.TextDocumentIdentifier",
+      "fields": [
+        {
+          "name": "uri"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.TextDocumentItem",
+      "fields": [
+        {
+          "name": "languageId"
+        },
+        {
+          "name": "text"
+        },
+        {
+          "name": "uri"
+        },
+        {
+          "name": "version"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.TextDocumentPositionParams",
+      "fields": [
+        {
+          "name": "position"
+        },
+        {
+          "name": "textDocument"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.TextEdit",
+      "fields": [
+        {
+          "name": "newText"
+        },
+        {
+          "name": "range"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.VersionedTextDocumentIdentifier",
+      "fields": [
+        {
+          "name": "uri"
+        },
+        {
+          "name": "version"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.WorkspaceEdit",
+      "fields": [
+        {
+          "name": "changes"
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.lsp.WorkspaceFolder"
+    },
+    {
+      "type": "org.javacs.lsp.WorkspaceSymbolParams",
+      "fields": [
+        {
+          "name": "query"
+        }
+      ],
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "org.javacs.markup.SemanticColors",
+      "fields": [
+        {
+          "name": "fields"
+        },
+        {
+          "name": "statics"
+        },
+        {
+          "name": "uri"
+        }
+      ]
+    },
+    {
+      "type": "sun.misc.Unsafe",
+      "fields": [
+        {
+          "name": "theUnsafe"
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.NativePRNG",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.security.SecureRandomParameters"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en"
+    }
+  ],
+  "resources": [
+    {
+      "glob": "META-INF/services/com.sun.source.util.Plugin"
+    },
+    {
+      "glob": "META-INF/services/java.nio.file.spi.FileSystemProvider"
+    },
+    {
+      "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
+    },
+    {
+      "glob": "META-INF/services/javax.annotation.processing.Processor"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/compiler_en.properties"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/javac_en.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/compiler_en.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/javac_en.properties"
+    },
+    {
+      "bundle": "com.sun.tools.javac.resources.compiler"
+    },
+    {
+      "bundle": "com.sun.tools.javac.resources.javac"
+    }
+  ]
+}
