@@ -240,12 +240,12 @@ TESTS = [
     ("documentHighlight", "A", "baseline", t_document_highlight),
     ("selectionRange", "A", "baseline", t_selection_range),
     ("formatting (google-java-format)", "A", "target", t_formatting),
-    ("semanticTokens/full", "B", "target", t_semantic_tokens),
-    ("inlayHint", "B", "target", t_inlay_hint),
-    ("callHierarchy", "B", "target", t_call_hierarchy),
-    ("typeHierarchy", "B", "target", t_type_hierarchy),
-    ("codeAction: generate members", "B", "target", t_codeaction_generate),
-    ("codeAction: organizeImports", "B", "target", t_organize_imports),
+    ("semanticTokens/full", "B", "baseline", t_semantic_tokens),
+    ("inlayHint", "B", "baseline", t_inlay_hint),
+    ("callHierarchy", "B", "baseline", t_call_hierarchy),
+    ("typeHierarchy", "B", "baseline", t_type_hierarchy),
+    ("codeAction: generate members", "B", "baseline", t_codeaction_generate),
+    ("codeAction: organizeImports", "B", "baseline", t_organize_imports),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 
