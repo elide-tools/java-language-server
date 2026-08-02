@@ -41,6 +41,34 @@ Two native-image / javac lessons worth carrying into Phase B:
    (used by goto-definition) resolves. Prefer `findAnywhere` for cross-file type
    lookup.
 
+## Status (2026-08-01) — Phase B landed
+
+All six Phase-B features are implemented, committed one-per-commit with a JUnit
+test each, and **green in the native image** (harness: 6/6 Phase-B targets now
+`baseline`; full JVM suite 261 tests, 0 failures):
+
+- **B1 semanticTokens/full** — AST tokenizer classifying identifiers/declarations
+  by resolved element kind into a delta-encoded token stream (richer than the
+  legacy `java/colors`; declares a legend).
+- **B2 inlayHint** — parameter-name hints at call sites + `var` inferred-type
+  hints (via `JCVariableDecl.declaredUsingVar()`).
+- **B3 callHierarchy** — prepare/incoming (reuses `FindReferences`, groups by
+  caller)/outgoing (walks the body; resolves callees in-task or via `findAnywhere`).
+- **B4 typeHierarchy** — prepare/supertypes (`Types.directSupertypes`)/subtypes
+  (`findTypeReferences` filtered by `Types.isSubtype`).
+- **B5 generate members** — `source` code actions: generate constructor +
+  getters/setters (new `GenerateConstructor`/`GenerateGettersAndSetters` rewrites).
+- **B6 organizeImports** — `source.organizeImports` action backed by `AutoFixImports`.
+
+**Recurring lesson reinforced:** the unnamed (default) package keeps breaking
+`Elements.getTypeElement`, `CompilerProvider.findTypeDeclaration`, and
+`FindHelper.findMethod` (all element/index lookups keyed by qualified name).
+B5's generators first used `getTypeDeclaration`+`getTypeElement` and returned
+nothing in-image (the named-package JUnit passed); the fix resolves the class by
+**tree scan within the file** (no element lookup). Rule of thumb for Phase C and
+beyond: prefer tree/`findAnywhere` resolution over `getTypeElement` anywhere a
+default-package project could reach.
+
 ## Why this is the right shape
 
 - JLS is built directly on **javac** (`com.sun.source.tree`, `javax.lang.model`,
