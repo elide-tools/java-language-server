@@ -24,8 +24,10 @@ public class OrganizeImportsTest {
         }
         assertThat(organize, notNullValue());
         assertThat(organize.title.toLowerCase(), containsString("import"));
+        assertThat(organize.edit, nullValue());
         // the unused `import java.util.List;` is removed (a deletion edit)
-        var edits = organize.edit.changes.values().iterator().next();
+        var resolved = server.resolveCodeAction(organize);
+        var edits = resolved.edit.changes.values().iterator().next();
         var deletions = 0;
         for (var e : edits) {
             if (e.newText.isEmpty()) deletions++;

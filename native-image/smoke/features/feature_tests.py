@@ -198,10 +198,19 @@ def t_codeaction_generate(s):
         "textDocument": {"uri": s.uri("Geometry.java")},
         "range": full_range(s, "Geometry.java"),
         "context": {"diagnostics": [], "only": ["source"]}}, timeout=6)
-    titles = [a.get("title", "") for a in (r or [])]
+    actions = r or []
+    titles = [a.get("title", "") for a in actions]
     want = ("getter", "tostring", "constructor", "hashcode")
-    ok = any(any(w in t.lower() for w in want) for t in titles)
-    return ok, f"{titles}"
+    picked = next((a for a in actions if any(w in a.get("title", "").lower() for w in want)), None)
+    if picked is None:
+        return False, f"{titles}"
+    # lazy listing carries no edit; codeAction/resolve computes it from the echoed `data`
+    if picked.get("edit"):
+        return False, f"edit present before resolve: {titles}"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    ok = any(v for v in changes.values())
+    return ok, f"{titles} resolved={ok}"
 
 
 def t_organize_imports(s):

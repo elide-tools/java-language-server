@@ -1,5 +1,7 @@
 package org.javacs.action;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
 import java.io.IOException;
@@ -30,21 +32,20 @@ public class CodeActionProvider {
                         params.textDocument.uri.getPath(), params.range.start.line + 1));
         var started = Instant.now();
         var file = Paths.get(params.textDocument.uri);
-        // TODO this get-map / convert-to-CodeAction split is an ugly workaround of the fact that we need a new compile
-        // task to generate the code actions
-        // If we switch to resolving code actions asynchronously using Command, that will fix this problem.
-        var rewrites = new TreeMap<String, Rewrite>();
+        // Cursor actions detect applicability with the one compile below (a cheap AST walk), then
+        // list with a resolve descriptor and no edit. The edit is computed on demand in resolve(),
+        // so a menu of N actions costs one compile, not one per action.
+        var descriptors = new TreeMap<String, JsonObject>();
         try (var task = compiler.compile(file)) {
             var elapsed = Duration.between(started, Instant.now()).toMillis();
             LOG.info(String.format("...compiled in %d ms", elapsed));
             var lines = task.root().getLineMap();
             var cursor = lines.getPosition(params.range.start.line + 1, params.range.start.character + 1);
-            rewrites.putAll(overrideInheritedMethods(task, file, cursor));
+            descriptors.putAll(overrideInheritedMethods(task, file, cursor));
         }
         var actions = new ArrayList<CodeAction>();
-        for (var title : rewrites.keySet()) {
-            // TODO are these all quick fixes?
-            actions.addAll(createQuickFix(title, rewrites.get(title)));
+        for (var title : descriptors.keySet()) {
+            actions.add(lazyAction(title, CodeActionKind.QuickFix, descriptors.get(title), null));
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
         LOG.info(String.format("...created %d actions in %d ms", actions.size(), elapsed));
@@ -57,7 +58,12 @@ public class CodeActionProvider {
         var actions = new ArrayList<CodeAction>();
         var file = Paths.get(params.textDocument.uri);
         if (wants(only, CodeActionKind.SourceOrganizeImports)) {
-            actions.add(buildAction("Organize imports", CodeActionKind.SourceOrganizeImports, new AutoFixImports(file)));
+            actions.add(
+                    lazyAction(
+                            "Organize imports",
+                            CodeActionKind.SourceOrganizeImports,
+                            descFile("AutoFixImports", file),
+                            null));
         }
         if (wants(only, CodeActionKind.Source)) {
             String simpleName = null;
@@ -65,11 +71,39 @@ public class CodeActionProvider {
                 simpleName = findClassForSource(task, params.range);
             }
             if (simpleName != null) {
-                addGenerated(actions, "Generate constructor", new GenerateConstructor(file, simpleName));
-                addGenerated(actions, "Generate getters and setters", new GenerateGettersAndSetters(file, simpleName));
+                actions.add(
+                        lazyAction(
+                                "Generate constructor",
+                                CodeActionKind.Source,
+                                descFileName("GenerateConstructor", file, simpleName),
+                                null));
+                actions.add(
+                        lazyAction(
+                                "Generate getters and setters",
+                                CodeActionKind.Source,
+                                descFileName("GenerateGettersAndSetters", file, simpleName),
+                                null));
             }
         }
         return actions;
+    }
+
+    /**
+     * Compute the {@code edit} for a code action listed lazily, reconstructing the rewrite from the
+     * opaque {@code data} descriptor the client echoed back. Actions that already carry an {@code
+     * edit} (diagnostic quick fixes) have no {@code data} and pass through unchanged.
+     */
+    public CodeAction resolve(CodeAction action) {
+        if (action.data == null || !action.data.isJsonObject()) return action;
+        var rewrite = rewriteFromData(action.data.getAsJsonObject());
+        var edits = rewrite.rewrite(compiler);
+        if (edits == Rewrite.CANCELLED) return action;
+        var edit = new WorkspaceEdit();
+        for (var f : edits.keySet()) {
+            edit.changes.put(f.toUri(), List.of(edits.get(f)));
+        }
+        action.edit = edit;
+        return action;
     }
 
     /** Whether an action of {@code kind} was requested by the client's {@code only} filter. */
@@ -90,39 +124,12 @@ public class CodeActionProvider {
         return null;
     }
 
-    private void addGenerated(List<CodeAction> actions, String title, Rewrite rewrite) {
-        var edits = rewrite.rewrite(compiler);
-        if (edits == Rewrite.CANCELLED || edits.isEmpty()) return;
-        var a = new CodeAction();
-        a.kind = CodeActionKind.Source;
-        a.title = title;
-        a.edit = new WorkspaceEdit();
-        for (var f : edits.keySet()) {
-            a.edit.changes.put(f.toUri(), List.of(edits.get(f)));
-        }
-        actions.add(a);
-    }
-
-    private CodeAction buildAction(String title, String kind, Rewrite rewrite) {
-        var a = new CodeAction();
-        a.kind = kind;
-        a.title = title;
-        a.edit = new WorkspaceEdit();
-        var edits = rewrite.rewrite(compiler);
-        if (edits != Rewrite.CANCELLED) {
-            for (var f : edits.keySet()) {
-                a.edit.changes.put(f.toUri(), List.of(edits.get(f)));
-            }
-        }
-        return a;
-    }
-
-    private Map<String, Rewrite> overrideInheritedMethods(CompileTask task, Path file, long cursor) {
+    private Map<String, JsonObject> overrideInheritedMethods(CompileTask task, Path file, long cursor) {
         if (!isBlankLine(task.root(), cursor)) return Map.of();
         if (isInMethod(task, cursor)) return Map.of();
         var methodTree = new FindMethodDeclarationAt(task.task).scan(task.root(), cursor);
         if (methodTree != null) return Map.of();
-        var actions = new TreeMap<String, Rewrite>();
+        var actions = new TreeMap<String, JsonObject>();
         var trees = Trees.instance(task.task);
         var classTree = new FindTypeDeclarationAt(task.task).scan(task.root(), cursor);
         if (classTree == null) return Map.of();
@@ -137,11 +144,11 @@ public class CodeActionProvider {
             if (methodSource.getQualifiedName().contentEquals("java.lang.Object")) continue;
             if (methodSource.equals(classElement)) continue;
             var ptr = new MethodPtr(task.task, method);
-            var rewrite =
-                    new OverrideInheritedMethod(
-                            ptr.className, ptr.methodName, ptr.erasedParameterTypes, file, (int) cursor);
+            var data = descMethod("OverrideInheritedMethod", ptr);
+            data.addProperty("file", file.toString());
+            data.addProperty("position", (int) cursor);
             var title = "Override '" + method.getSimpleName() + "' from " + ptr.className;
-            actions.put(title, rewrite);
+            actions.put(title, data);
         }
         return actions;
     }
@@ -186,7 +193,8 @@ public class CodeActionProvider {
     }
 
     private List<CodeAction> codeActionForDiagnostic(CompileTask task, Path file, Diagnostic d) {
-        // TODO this should be done asynchronously using executeCommand
+        // Quick fixes stay eager: a rewrite that returns CANCELLED is not applicable, and that can
+        // only be known by running it, so we must not offer an unresolvable fix.
         switch (d.code) {
             case "unused_local":
                 var toStatement = new ConvertVariableToStatement(file, findPosition(task, d.range.start));
@@ -383,6 +391,74 @@ public class CodeActionProvider {
             a.edit.changes.put(file.toUri(), List.of(edits.get(file)));
         }
         return List.of(a);
+    }
+
+    // ---- lazy action + resolve descriptor plumbing (cursor + source actions) ----
+
+    private CodeAction lazyAction(String title, String kind, JsonObject data, List<Diagnostic> diagnostics) {
+        var a = new CodeAction();
+        a.title = title;
+        a.kind = kind;
+        a.data = data;
+        if (diagnostics != null) a.diagnostics = diagnostics;
+        return a;
+    }
+
+    private static JsonObject descFile(String type, Path file) {
+        var d = new JsonObject();
+        d.addProperty("type", type);
+        d.addProperty("file", file.toString());
+        return d;
+    }
+
+    private static JsonObject descFileName(String type, Path file, String name) {
+        var d = descFile(type, file);
+        d.addProperty("name", name);
+        return d;
+    }
+
+    private static JsonObject descMethod(String type, MethodPtr method) {
+        var d = new JsonObject();
+        d.addProperty("type", type);
+        d.addProperty("className", method.className);
+        d.addProperty("methodName", method.methodName);
+        var erased = new JsonArray();
+        for (var p : method.erasedParameterTypes) erased.add(p);
+        d.add("erasedParameterTypes", erased);
+        return d;
+    }
+
+    private Rewrite rewriteFromData(JsonObject d) {
+        var type = d.get("type").getAsString();
+        switch (type) {
+            case "AutoFixImports":
+                return new AutoFixImports(dataPath(d));
+            case "GenerateConstructor":
+                return new GenerateConstructor(dataPath(d), d.get("name").getAsString());
+            case "GenerateGettersAndSetters":
+                return new GenerateGettersAndSetters(dataPath(d), d.get("name").getAsString());
+            case "OverrideInheritedMethod":
+                return new OverrideInheritedMethod(
+                        d.get("className").getAsString(),
+                        d.get("methodName").getAsString(),
+                        dataErased(d),
+                        dataPath(d),
+                        d.get("position").getAsInt());
+            default:
+                LOG.warning("Unknown code action data type: " + type);
+                return Rewrite.NOT_SUPPORTED;
+        }
+    }
+
+    private static Path dataPath(JsonObject d) {
+        return Paths.get(d.get("file").getAsString());
+    }
+
+    private static String[] dataErased(JsonObject d) {
+        var arr = d.getAsJsonArray("erasedParameterTypes");
+        var xs = new String[arr.size()];
+        for (var i = 0; i < xs.length; i++) xs[i] = arr.get(i).getAsString();
+        return xs;
     }
 
     private static final Logger LOG = Logger.getLogger("main");

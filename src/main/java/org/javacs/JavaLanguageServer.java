@@ -205,7 +205,9 @@ class JavaLanguageServer extends LanguageServer {
         var codeLensOptions = new JsonObject();
         c.add("codeLensProvider", codeLensOptions);
         c.addProperty("foldingRangeProvider", true);
-        c.addProperty("codeActionProvider", true);
+        var codeActionOptions = new JsonObject();
+        codeActionOptions.addProperty("resolveProvider", true);
+        c.add("codeActionProvider", codeActionOptions);
         var renameOptions = new JsonObject();
         renameOptions.addProperty("prepareProvider", true);
         c.add("renameProvider", renameOptions);
@@ -680,6 +682,11 @@ class JavaLanguageServer extends LanguageServer {
         } else {
             return provider.codeActionForDiagnostics(params);
         }
+    }
+
+    @Override
+    public CodeAction resolveCodeAction(CodeAction unresolved) {
+        return new CodeActionProvider(compiler()).resolve(unresolved);
     }
 
     @Override

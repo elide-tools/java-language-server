@@ -32,7 +32,10 @@ public class GenerateMembersTest {
         assertThat(titles, hasItems("Generate constructor", "Generate getters and setters"));
         // the generated constructor initializes the declared fields
         assertThat(constructor, notNullValue());
-        var edits = constructor.edit.changes.values().iterator().next();
+        // listing is lazy: the edit is absent until resolved
+        assertThat(constructor.edit, nullValue());
+        var resolved = server.resolveCodeAction(constructor);
+        var edits = resolved.edit.changes.values().iterator().next();
         assertThat(edits.get(0).newText, allOf(containsString("GenerateExample("), containsString("count")));
     }
 }
