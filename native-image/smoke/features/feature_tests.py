@@ -390,6 +390,24 @@ def t_replace_constructor(s):
     return factory and redirect, f"{texts}"
 
 
+def t_add_parameter(s):
+    cur = s.pos("AddParameter.java", "return scale(10, 2);", "scale")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("AddParameter.java")},
+        "range": {"start": cur, "end": cur},
+        "context": {"diagnostics": [], "only": ["refactor.rewrite"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "add parameter" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any(t == ", int param2" for t in texts), f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -432,6 +450,7 @@ TESTS = [
     ("codeAction: inline field", "T1", "baseline", t_inline_field),
     ("codeAction: change method access", "T1", "baseline", t_change_method_access),
     ("codeAction: replace constructor with factory", "T1", "baseline", t_replace_constructor),
+    ("codeAction: add parameter", "T1", "baseline", t_add_parameter),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 

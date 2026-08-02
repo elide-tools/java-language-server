@@ -104,6 +104,13 @@ public class CodeActionProvider {
                                     d,
                                     null));
                 }
+                if (AddParameter.canAdd(task, (int) cursor)) {
+                    var d = new JsonObject();
+                    d.addProperty("type", "AddParameter");
+                    d.addProperty("file", file.toString());
+                    d.addProperty("position", (int) cursor);
+                    actions.add(lazyAction("Add parameter to method", CodeActionKind.RefactorRewrite, d, null));
+                }
             }
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
@@ -628,6 +635,8 @@ public class CodeActionProvider {
                 return new ChangeMethodAccess(dataPath(d), d.get("position").getAsInt(), d.get("access").getAsString());
             case "ReplaceConstructorWithFactoryMethod":
                 return new ReplaceConstructorWithFactoryMethod(dataPath(d), d.get("position").getAsInt());
+            case "AddParameter":
+                return new AddParameter(dataPath(d), d.get("position").getAsInt());
             case "OverrideInheritedMethod":
                 return new OverrideInheritedMethod(
                         d.get("className").getAsString(),
