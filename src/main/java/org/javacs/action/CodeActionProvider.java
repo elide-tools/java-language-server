@@ -56,6 +56,9 @@ public class CodeActionProvider {
         var only = params.context.only;
         var actions = new ArrayList<CodeAction>();
         var file = Paths.get(params.textDocument.uri);
+        if (wants(only, CodeActionKind.SourceOrganizeImports)) {
+            actions.add(buildAction("Organize imports", CodeActionKind.SourceOrganizeImports, new AutoFixImports(file)));
+        }
         if (wants(only, CodeActionKind.Source)) {
             String simpleName = null;
             try (var task = compiler.compile(file)) {
@@ -98,6 +101,20 @@ public class CodeActionProvider {
             a.edit.changes.put(f.toUri(), List.of(edits.get(f)));
         }
         actions.add(a);
+    }
+
+    private CodeAction buildAction(String title, String kind, Rewrite rewrite) {
+        var a = new CodeAction();
+        a.kind = kind;
+        a.title = title;
+        a.edit = new WorkspaceEdit();
+        var edits = rewrite.rewrite(compiler);
+        if (edits != Rewrite.CANCELLED) {
+            for (var f : edits.keySet()) {
+                a.edit.changes.put(f.toUri(), List.of(edits.get(f)));
+            }
+        }
+        return a;
     }
 
     private Map<String, Rewrite> overrideInheritedMethods(CompileTask task, Path file, long cursor) {
