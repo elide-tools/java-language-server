@@ -31,6 +31,7 @@ import org.javacs.navigation.SelectionRangeProvider;
 import org.javacs.markup.SemanticTokensProvider;
 import org.javacs.navigation.InlayHintProvider;
 import org.javacs.navigation.CallHierarchyProvider;
+import org.javacs.navigation.TypeHierarchyProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -226,6 +227,7 @@ class JavaLanguageServer extends LanguageServer {
         c.add("semanticTokensProvider", semanticTokensOptions);
         c.addProperty("inlayHintProvider", true);
         c.addProperty("callHierarchyProvider", true);
+        c.addProperty("typeHierarchyProvider", true);
 
         return new InitializeResult(c);
     }
@@ -443,6 +445,27 @@ class JavaLanguageServer extends LanguageServer {
     public List<CallHierarchyOutgoingCall> callHierarchyOutgoing(CallHierarchyOutgoingCallsParams params) {
         if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
         return new CallHierarchyProvider(compiler()).outgoing(params.item);
+    }
+
+    @Override
+    public List<TypeHierarchyItem> prepareTypeHierarchy(TextDocumentPositionParams position) {
+        if (!FileStore.isJavaFile(position.textDocument.uri)) return List.of();
+        var file = Paths.get(position.textDocument.uri);
+        var line = position.position.line + 1;
+        var column = position.position.character + 1;
+        return new TypeHierarchyProvider(compiler()).prepare(file, line, column);
+    }
+
+    @Override
+    public List<TypeHierarchyItem> typeHierarchySupertypes(TypeHierarchySupertypesParams params) {
+        if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
+        return new TypeHierarchyProvider(compiler()).supertypes(params.item);
+    }
+
+    @Override
+    public List<TypeHierarchyItem> typeHierarchySubtypes(TypeHierarchySubtypesParams params) {
+        if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
+        return new TypeHierarchyProvider(compiler()).subtypes(params.item);
     }
 
     @Override

@@ -156,5 +156,17 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public List<TypeHierarchyItem> prepareTypeHierarchy(TextDocumentPositionParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public List<TypeHierarchyItem> typeHierarchySupertypes(TypeHierarchySupertypesParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public List<TypeHierarchyItem> typeHierarchySubtypes(TypeHierarchySubtypesParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }
