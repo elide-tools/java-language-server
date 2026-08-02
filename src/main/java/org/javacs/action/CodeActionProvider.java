@@ -65,6 +65,13 @@ public class CodeActionProvider {
                 d.addProperty("position", (int) cursor);
                 actions.add(lazyAction("Inline variable", CodeActionKind.RefactorInline, d, null));
             }
+            if (wants(params.context.only, CodeActionKind.RefactorInline) && InlineMethod.canInline(task, (int) cursor)) {
+                var d = new JsonObject();
+                d.addProperty("type", "InlineMethod");
+                d.addProperty("file", file.toString());
+                d.addProperty("position", (int) cursor);
+                actions.add(lazyAction("Inline method", CodeActionKind.RefactorInline, d, null));
+            }
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
         LOG.info(String.format("...created %d actions in %d ms", actions.size(), elapsed));
@@ -580,6 +587,8 @@ public class CodeActionProvider {
                 return new ExtractMethod(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "InlineVariable":
                 return new InlineVariable(dataPath(d), d.get("position").getAsInt());
+            case "InlineMethod":
+                return new InlineMethod(dataPath(d), d.get("position").getAsInt());
             case "OverrideInheritedMethod":
                 return new OverrideInheritedMethod(
                         d.get("className").getAsString(),
