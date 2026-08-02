@@ -237,6 +237,25 @@ def t_add_overrides(s):
     return inserted, f"inserted={inserted}"
 
 
+def t_extract_variable(s):
+    start = s.pos("Geometry.java", "s.area()", "s.area()")
+    end = {"line": start["line"], "character": start["character"] + len("s.area()")}
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("Geometry.java")},
+        "range": {"start": start, "end": end},
+        "context": {"diagnostics": [], "only": ["refactor.extract"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if a.get("kind") == "refactor.extract"), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any("var extracted = s.area()" in t for t in texts), f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -271,6 +290,7 @@ TESTS = [
     ("codeAction: generate members", "B", "baseline", t_codeaction_generate),
     ("codeAction: organizeImports", "B", "baseline", t_organize_imports),
     ("codeAction: add overrides", "T1", "baseline", t_add_overrides),
+    ("codeAction: extract variable", "T1", "baseline", t_extract_variable),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 

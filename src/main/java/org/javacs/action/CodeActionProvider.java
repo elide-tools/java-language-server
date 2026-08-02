@@ -35,17 +35,21 @@ public class CodeActionProvider {
         // Cursor actions detect applicability with the one compile below (a cheap AST walk), then
         // list with a resolve descriptor and no edit. The edit is computed on demand in resolve(),
         // so a menu of N actions costs one compile, not one per action.
-        var descriptors = new TreeMap<String, JsonObject>();
+        var actions = new ArrayList<CodeAction>();
         try (var task = compiler.compile(file)) {
             var elapsed = Duration.between(started, Instant.now()).toMillis();
             LOG.info(String.format("...compiled in %d ms", elapsed));
             var lines = task.root().getLineMap();
             var cursor = lines.getPosition(params.range.start.line + 1, params.range.start.character + 1);
-            descriptors.putAll(overrideInheritedMethods(task, file, cursor));
-        }
-        var actions = new ArrayList<CodeAction>();
-        for (var title : descriptors.keySet()) {
-            actions.add(lazyAction(title, CodeActionKind.QuickFix, descriptors.get(title), null));
+            for (var e : overrideInheritedMethods(task, file, cursor).entrySet()) {
+                actions.add(lazyAction(e.getKey(), CodeActionKind.QuickFix, e.getValue(), null));
+            }
+            if (wants(params.context.only, CodeActionKind.RefactorExtract)) {
+                var extract = extractVariable(task, file, params.range);
+                if (extract != null) {
+                    actions.add(lazyAction("Extract variable", CodeActionKind.RefactorExtract, extract, null));
+                }
+            }
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
         LOG.info(String.format("...created %d actions in %d ms", actions.size(), elapsed));
@@ -434,6 +438,72 @@ public class CodeActionProvider {
         return d;
     }
 
+    /**
+     * Descriptor for extracting the expression exactly spanning the selection into a local variable,
+     * or null when the selection is not a value-producing expression inside a block.
+     */
+    private JsonObject extractVariable(CompileTask task, Path file, Range range) {
+        if (range.start.line == range.end.line && range.start.character == range.end.character) {
+            return null;
+        }
+        var trees = Trees.instance(task.task);
+        var pos = trees.getSourcePositions();
+        var root = task.root();
+        var lines = root.getLineMap();
+        var start = (int) lines.getPosition(range.start.line + 1, range.start.character + 1);
+        var end = (int) lines.getPosition(range.end.line + 1, range.end.character + 1);
+        if (end <= start) return null;
+        var expr = findExpression(root, pos, start, end);
+        if (expr == null) return null;
+        var path = trees.getPath(root, expr);
+        if (!inBlock(path)) return null;
+        var type = trees.getTypeMirror(path);
+        if (type == null) return null;
+        switch (type.getKind()) {
+            case VOID:
+            case NONE:
+            case ERROR:
+            case PACKAGE:
+            case EXECUTABLE:
+                return null;
+            default:
+                break;
+        }
+        var d = new JsonObject();
+        d.addProperty("type", "ExtractVariable");
+        d.addProperty("file", file.toString());
+        d.addProperty("start", start);
+        d.addProperty("end", end);
+        return d;
+    }
+
+    private static ExpressionTree findExpression(CompilationUnitTree root, SourcePositions pos, int start, int end) {
+        var result = new ExpressionTree[1];
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void scan(Tree tree, Void p) {
+                if (result[0] == null && tree instanceof ExpressionTree) {
+                    var s = pos.getStartPosition(root, tree);
+                    var e = pos.getEndPosition(root, tree);
+                    if (s == start && e == end) {
+                        result[0] = (ExpressionTree) tree;
+                    }
+                }
+                return super.scan(tree, p);
+            }
+        }.scan(root, null);
+        return result[0];
+    }
+
+    private static boolean inBlock(TreePath path) {
+        for (var p = path; p != null && p.getParentPath() != null; p = p.getParentPath()) {
+            if (p.getLeaf() instanceof StatementTree && p.getParentPath().getLeaf() instanceof BlockTree) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Rewrite rewriteFromData(JsonObject d) {
         var type = d.get("type").getAsString();
         switch (type) {
@@ -445,6 +515,8 @@ public class CodeActionProvider {
                 return new GenerateConstructor(dataPath(d), d.get("name").getAsString());
             case "GenerateGettersAndSetters":
                 return new GenerateGettersAndSetters(dataPath(d), d.get("name").getAsString());
+            case "ExtractVariable":
+                return new ExtractVariable(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "OverrideInheritedMethod":
                 return new OverrideInheritedMethod(
                         d.get("className").getAsString(),
