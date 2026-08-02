@@ -408,6 +408,33 @@ def t_add_parameter(s):
     return any(t == ", int param2" for t in texts), f"{texts}"
 
 
+def t_remove_parameter(s):
+    src = s.files["RemoveParameter.java"].split("\n")
+    cur = s.pos("RemoveParameter.java", "private int compute(int a, int unused)", "unused")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("RemoveParameter.java")},
+        "range": {"start": cur, "end": cur},
+        "context": {"diagnostics": [], "only": ["refactor.rewrite"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "remove" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    edits = [e for edits in changes.values() for e in edits]
+    deleted = set()
+    for e in edits:
+        if e.get("newText", "") != "":
+            return False, f"unexpected non-deletion: {e}"
+        rng = e["range"]
+        if rng["start"]["line"] != rng["end"]["line"]:
+            return False, "multi-line deletion"
+        deleted.add(src[rng["start"]["line"]][rng["start"]["character"]:rng["end"]["character"]])
+    return deleted == {", int unused", ", 9"}, f"{sorted(deleted)}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -451,6 +478,7 @@ TESTS = [
     ("codeAction: change method access", "T1", "baseline", t_change_method_access),
     ("codeAction: replace constructor with factory", "T1", "baseline", t_replace_constructor),
     ("codeAction: add parameter", "T1", "baseline", t_add_parameter),
+    ("codeAction: remove parameter", "T1", "baseline", t_remove_parameter),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 
