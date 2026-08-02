@@ -391,6 +391,13 @@ public class LSP {
                             respond(send, r.id, response);
                             break;
                         }
+                    case "textDocument/implementation":
+                        {
+                            var params = gson.fromJson(r.params, TextDocumentPositionParams.class);
+                            var response = server.findImplementations(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
                     case "textDocument/documentSymbol":
                         {
                             var params = gson.fromJson(r.params, DocumentSymbolParams.class);

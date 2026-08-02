@@ -24,6 +24,7 @@ import org.javacs.markup.ColorProvider;
 import org.javacs.markup.ErrorProvider;
 import org.javacs.navigation.DefinitionProvider;
 import org.javacs.navigation.ReferenceProvider;
+import org.javacs.navigation.ImplementationProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -201,6 +202,7 @@ class JavaLanguageServer extends LanguageServer {
         var renameOptions = new JsonObject();
         renameOptions.addProperty("prepareProvider", true);
         c.add("renameProvider", renameOptions);
+        c.addProperty("implementationProvider", true);
 
         return new InitializeResult(c);
     }
@@ -338,6 +340,17 @@ class JavaLanguageServer extends LanguageServer {
         if (found == ReferenceProvider.NOT_SUPPORTED) {
             return Optional.empty();
         }
+        return Optional.of(found);
+    }
+
+    @Override
+    public Optional<List<Location>> findImplementations(TextDocumentPositionParams position) {
+        if (!FileStore.isJavaFile(position.textDocument.uri)) return Optional.empty();
+        var file = Paths.get(position.textDocument.uri);
+        var line = position.position.line + 1;
+        var column = position.position.character + 1;
+        var found = new ImplementationProvider(compiler(), file, line, column).find();
+        if (found == ImplementationProvider.NOT_SUPPORTED) return Optional.empty();
         return Optional.of(found);
     }
 
