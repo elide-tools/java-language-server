@@ -53,6 +53,10 @@ public class CodeActionProvider {
                 if (constant != null) {
                     actions.add(lazyAction("Extract constant", CodeActionKind.RefactorExtract, constant, null));
                 }
+                var extractedMethod = extractMethod(task, file, params.range);
+                if (extractedMethod != null) {
+                    actions.add(lazyAction("Extract method", CodeActionKind.RefactorExtract, extractedMethod, null));
+                }
             }
             if (wants(params.context.only, CodeActionKind.RefactorInline) && InlineVariable.canInline(task, (int) cursor)) {
                 var d = new JsonObject();
@@ -509,6 +513,27 @@ public class CodeActionProvider {
         return d;
     }
 
+    /**
+     * Descriptor for extracting the statements covered by the selection into a new method, or null
+     * when the selection is not a safely-extractable run of whole statements.
+     */
+    private JsonObject extractMethod(CompileTask task, Path file, Range range) {
+        if (range.start.line == range.end.line && range.start.character == range.end.character) {
+            return null;
+        }
+        var lines = task.root().getLineMap();
+        var start = (int) lines.getPosition(range.start.line + 1, range.start.character + 1);
+        var end = (int) lines.getPosition(range.end.line + 1, range.end.character + 1);
+        if (end <= start) return null;
+        if (!ExtractMethod.canExtract(task, start, end)) return null;
+        var d = new JsonObject();
+        d.addProperty("type", "ExtractMethod");
+        d.addProperty("file", file.toString());
+        d.addProperty("start", start);
+        d.addProperty("end", end);
+        return d;
+    }
+
     private static ExpressionTree findExpression(CompilationUnitTree root, SourcePositions pos, int start, int end) {
         var result = new ExpressionTree[1];
         new TreeScanner<Void, Void>() {
@@ -551,6 +576,8 @@ public class CodeActionProvider {
                 return new ExtractVariable(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "ExtractConstant":
                 return new ExtractConstant(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
+            case "ExtractMethod":
+                return new ExtractMethod(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "InlineVariable":
                 return new InlineVariable(dataPath(d), d.get("position").getAsInt());
             case "OverrideInheritedMethod":

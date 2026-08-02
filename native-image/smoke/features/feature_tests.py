@@ -275,6 +275,28 @@ def t_extract_constant(s):
     return any("EXTRACTED_CONSTANT = 3 * 4" in t for t in texts), f"{texts}"
 
 
+def t_extract_method(s):
+    start = s.pos("ExtractMethod.java", "int sum = a + b;", "int")
+    endtok = s.pos("ExtractMethod.java", "int scaled = sum * 2;", "int scaled = sum * 2;")
+    end = {"line": endtok["line"], "character": endtok["character"] + len("int scaled = sum * 2;")}
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("ExtractMethod.java")},
+        "range": {"start": start, "end": end},
+        "context": {"diagnostics": [], "only": ["refactor.extract"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "method" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    declares = any("private int extracted(int a, int b)" in t and "return scaled;" in t for t in texts)
+    call = any("int scaled = extracted(a, b);" in t for t in texts)
+    return declares and call, f"{texts}"
+
+
 def t_inline_variable(s):
     var = s.pos("Inline.java", "int sum = a + b;", "sum")
     r = s.req("textDocument/codeAction", {
@@ -329,6 +351,7 @@ TESTS = [
     ("codeAction: add overrides", "T1", "baseline", t_add_overrides),
     ("codeAction: extract variable", "T1", "baseline", t_extract_variable),
     ("codeAction: extract constant", "T1", "baseline", t_extract_constant),
+    ("codeAction: extract method", "T1", "baseline", t_extract_method),
     ("codeAction: inline variable", "T1", "baseline", t_inline_variable),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
