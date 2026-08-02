@@ -140,5 +140,9 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public List<InlayHint> inlayHint(InlayHintParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }

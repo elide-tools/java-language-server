@@ -29,6 +29,7 @@ import org.javacs.navigation.TypeDefinitionProvider;
 import org.javacs.navigation.DocumentHighlightProvider;
 import org.javacs.navigation.SelectionRangeProvider;
 import org.javacs.markup.SemanticTokensProvider;
+import org.javacs.navigation.InlayHintProvider;
 import org.javacs.rewrite.*;
 
 class JavaLanguageServer extends LanguageServer {
@@ -222,6 +223,7 @@ class JavaLanguageServer extends LanguageServer {
         semanticTokensOptions.add("legend", semanticTokensLegend);
         semanticTokensOptions.addProperty("full", true);
         c.add("semanticTokensProvider", semanticTokensOptions);
+        c.addProperty("inlayHintProvider", true);
 
         return new InitializeResult(c);
     }
@@ -411,6 +413,13 @@ class JavaLanguageServer extends LanguageServer {
         var file = Paths.get(params.textDocument.uri);
         var data = new SemanticTokensProvider(compiler()).tokens(file);
         return Optional.of(new SemanticTokens(data));
+    }
+
+    @Override
+    public List<InlayHint> inlayHint(InlayHintParams params) {
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return List.of();
+        var file = Paths.get(params.textDocument.uri);
+        return new InlayHintProvider(compiler(), file).inlayHints(params.range);
     }
 
     @Override
