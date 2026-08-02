@@ -369,6 +369,27 @@ def t_change_method_access(s):
     return any(t == "public" for t in texts), f"{texts}"
 
 
+def t_replace_constructor(s):
+    cur = s.pos("ReplaceConstructor.java", "ReplaceConstructor(int value) {", "ReplaceConstructor")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("ReplaceConstructor.java")},
+        "range": {"start": cur, "end": cur},
+        "context": {"diagnostics": [], "only": ["refactor.rewrite"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "factory" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    if picked.get("edit"):
+        return False, "edit present before resolve"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    factory = any("static ReplaceConstructor create(int value)" in t
+                  and "return new ReplaceConstructor(value);" in t for t in texts)
+    redirect = any(t == "ReplaceConstructor.create(42)" for t in texts)
+    return factory and redirect, f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -410,6 +431,7 @@ TESTS = [
     ("codeAction: inline method", "T1", "baseline", t_inline_method),
     ("codeAction: inline field", "T1", "baseline", t_inline_field),
     ("codeAction: change method access", "T1", "baseline", t_change_method_access),
+    ("codeAction: replace constructor with factory", "T1", "baseline", t_replace_constructor),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 

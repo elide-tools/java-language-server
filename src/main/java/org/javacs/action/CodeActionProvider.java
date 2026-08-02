@@ -92,6 +92,18 @@ public class CodeActionProvider {
                         actions.add(lazyAction("Make method " + level[1], CodeActionKind.RefactorRewrite, d, null));
                     }
                 }
+                if (ReplaceConstructorWithFactoryMethod.canReplace(task, (int) cursor)) {
+                    var d = new JsonObject();
+                    d.addProperty("type", "ReplaceConstructorWithFactoryMethod");
+                    d.addProperty("file", file.toString());
+                    d.addProperty("position", (int) cursor);
+                    actions.add(
+                            lazyAction(
+                                    "Replace constructor with factory method",
+                                    CodeActionKind.RefactorRewrite,
+                                    d,
+                                    null));
+                }
             }
         }
         var elapsed = Duration.between(started, Instant.now()).toMillis();
@@ -614,6 +626,8 @@ public class CodeActionProvider {
                 return new InlineField(dataPath(d), d.get("position").getAsInt());
             case "ChangeMethodAccess":
                 return new ChangeMethodAccess(dataPath(d), d.get("position").getAsInt(), d.get("access").getAsString());
+            case "ReplaceConstructorWithFactoryMethod":
+                return new ReplaceConstructorWithFactoryMethod(dataPath(d), d.get("position").getAsInt());
             case "OverrideInheritedMethod":
                 return new OverrideInheritedMethod(
                         d.get("className").getAsString(),
