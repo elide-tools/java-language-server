@@ -83,6 +83,12 @@ public class CodeActionProvider {
                                 CodeActionKind.Source,
                                 descFileName("GenerateGettersAndSetters", file, simpleName),
                                 null));
+                actions.add(
+                        lazyAction(
+                                "Add missing @Override annotations",
+                                CodeActionKind.Source,
+                                descFile("AutoAddOverrides", file),
+                                null));
             }
         }
         return actions;
@@ -433,6 +439,8 @@ public class CodeActionProvider {
         switch (type) {
             case "AutoFixImports":
                 return new AutoFixImports(dataPath(d));
+            case "AutoAddOverrides":
+                return new AutoAddOverrides(dataPath(d));
             case "GenerateConstructor":
                 return new GenerateConstructor(dataPath(d), d.get("name").getAsString());
             case "GenerateGettersAndSetters":

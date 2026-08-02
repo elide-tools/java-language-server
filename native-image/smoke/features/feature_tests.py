@@ -222,6 +222,21 @@ def t_organize_imports(s):
     return any("import" in t for t in titles), f"{titles}"
 
 
+def t_add_overrides(s):
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("Circle.java")},
+        "range": full_range(s, "Circle.java"),
+        "context": {"diagnostics": [], "only": ["source"]}}, timeout=6)
+    actions = r or []
+    picked = next((a for a in actions if "override" in a.get("title", "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in actions]}"
+    resolved = s.req("codeAction/resolve", picked, timeout=6)
+    changes = ((resolved or {}).get("edit") or {}).get("changes") or {}
+    inserted = any("@Override" in e.get("newText", "") for edits in changes.values() for e in edits)
+    return inserted, f"inserted={inserted}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -255,6 +270,7 @@ TESTS = [
     ("typeHierarchy", "B", "baseline", t_type_hierarchy),
     ("codeAction: generate members", "B", "baseline", t_codeaction_generate),
     ("codeAction: organizeImports", "B", "baseline", t_organize_imports),
+    ("codeAction: add overrides", "T1", "baseline", t_add_overrides),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 
