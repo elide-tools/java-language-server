@@ -69,6 +69,57 @@ nothing in-image (the named-package JUnit passed); the fix resolves the class by
 beyond: prefer tree/`findAnywhere` resolution over `getTypeElement` anywhere a
 default-package project could reach.
 
+## Status (2026-08-02) — codeAction/resolve + refactor code actions (Tier 1/2)
+
+Beyond the Phase A/B parity list, two rounds of code-action work landed on
+`native-image`, one-per-commit with a JUnit test + an in-image
+`feature_tests.py` case each (harness now: 5 codeAction cases GREEN including
+resolve; full JVM suite 265 tests, 0 failures via `scripts/junit-summary.py`):
+
+**Tier 2 — `codeAction/resolve` (lazy edits).** `textDocument/codeAction` lists
+cursor + source actions with an opaque `data` descriptor and no `edit`;
+`codeAction/resolve` reconstructs the rewrite from that descriptor and computes
+the edit on demand (`codeActionProvider.resolveProvider = true`). A menu of N
+actions now costs one compile instead of one-per-action — the prerequisite for
+the refactor catalog. Diagnostic quick fixes stay **eager**: a rewrite that
+returns `CANCELLED` is only detectable by running it, so a lazy quick fix would
+offer an unresolvable action. `data` is a `JsonElement` (gson-special-cased, no
+reflection) and reconstruction is an explicit factory switch — no
+`Class.forName`, no extra reflection registration.
+
+**Tier 1 — refactor/source code actions.**
+- **Add missing @Override** (`source`) — wired the already-implemented
+  `AutoAddOverrides` (walks `FindMissingOverride`).
+- **refactor.extract → extract variable** (`ExtractVariable`) — inserts
+  `var extracted = <expr>;` before the enclosing block statement and replaces the
+  selected expression with the name; gated on a value-producing expression in a block.
+- **refactor.inline → inline variable** (`InlineVariable`) — replaces every use of
+  a local with its initializer and deletes the declaration, **only when provably
+  behavior-preserving** (never reassigned; initializer side-effect-free; every
+  value it reads is effectively-final or a `final` field). Otherwise `CANCELLED`.
+  The safety analysis is shared between lazy detection (`canInline`) and `resolve`.
+
+**Correction to this doc's earlier premise:** most of `rewrite/` was *scaffolding*,
+not "written but unwired." `ExtractConstant`, `ExtractMethod`,
+`InlineMethod/Field`, `ChangeMethodAccess`, `ReplaceConstructorWithFactoryMethod`,
+`CatchException`, `AddParameter`/`RemoveParameter`, `CreateMissingField` are empty
+stubs returning `CANCELLED` (the quick-fix and member-gen rewrites used in Phase B
+*are* real). Wiring a stub would offer a menu item that does nothing, so each
+refactor above is a real implementation on the javac AST.
+
+### What's next (Tier 1 backlog — still stubs)
+- **refactor.extract:** `ExtractConstant` (`static final` field), `ExtractMethod`
+  (needs parameter/return dataflow — the hardest).
+- **refactor.inline:** `InlineMethod`, `InlineField`.
+- **refactor.rewrite:** `ChangeMethodAccess` (make public/private/protected),
+  `ReplaceConstructorWithFactoryMethod`, `AddParameter`/`RemoveParameter`,
+  `CatchException`, `CreateMissingField`.
+
+Each follows the same discipline: implement the rewrite + cursor/selection
+detection + resolve descriptor + JUnit test + in-image harness case. After the
+backlog, the last non-refactor targets are **C1 workspace/pull diagnostics** and
+**A6 formatting-in-Elide**.
+
 ## Why this is the right shape
 
 - JLS is built directly on **javac** (`com.sun.source.tree`, `javax.lang.model`,
@@ -325,7 +376,9 @@ Run against the JVM baseline (oracle parity): swap `run-native-server.sh` →
 
 Output tags: `PASS/FAIL` for `baseline` (regression guard, fails the run),
 `DONE/TODO` for `target` (backlog; never fails the run). Current state:
-baseline OK (definition, references); **13 targets TODO**.
+baseline GREEN for A1–A5, B1–B6, and the Tier-1 refactors (add overrides,
+extract/inline variable); **2 targets TODO** (A6 formatting-in-Elide, C1
+workspace diagnostics).
 
 Per feature, as it lands:
 1. implement provider + dispatch + capability in JLS source (on `native-image`
