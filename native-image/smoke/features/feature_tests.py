@@ -95,6 +95,18 @@ def full_range(s, name):
             "end": {"line": last, "character": len(lines[last]) if lines else 0}}
 
 
+def diagnostics(s, name):
+    """Published diagnostics for a fixture file. didSave re-lints all active documents."""
+    uri = s.uri(name)
+    s.srv.notify("textDocument/didSave", {"textDocument": {"uri": uri}})
+    m = s.srv.notification(
+        "textDocument/publishDiagnostics",
+        pred=lambda msg: (msg.get("params") or {}).get("uri") == uri
+        and len(((msg.get("params") or {}).get("diagnostics") or [])) > 0,
+        timeout=60)
+    return ((m or {}).get("params") or {}).get("diagnostics") or []
+
+
 # ---- feature tests: each returns (ok: bool, detail: str) ----
 
 def t_definition(s):  # baseline sanity
@@ -435,6 +447,20 @@ def t_remove_parameter(s):
     return deleted == {", int unused", ", 9"}, f"{sorted(deleted)}"
 
 
+def t_create_missing_field(s):
+    ds = diagnostics(s, "CreateMissingField.java")
+    r = s.req("textDocument/codeAction", {
+        "textDocument": {"uri": s.uri("CreateMissingField.java")},
+        "range": full_range(s, "CreateMissingField.java"),
+        "context": {"diagnostics": ds}}, timeout=6)
+    picked = next((a for a in (r or []) if "create field" in (a.get("title") or "").lower()), None)
+    if picked is None:
+        return False, f"{[a.get('title') for a in (r or [])]}"
+    changes = (picked.get("edit") or {}).get("changes") or {}
+    texts = [e.get("newText", "") for edits in changes.values() for e in edits]
+    return any("private int value;" in t for t in texts), f"{texts}"
+
+
 def t_formatting(s):
     r = s.req("textDocument/formatting", {
         "textDocument": {"uri": s.uri("Messy.java")},
@@ -479,6 +505,7 @@ TESTS = [
     ("codeAction: replace constructor with factory", "T1", "baseline", t_replace_constructor),
     ("codeAction: add parameter", "T1", "baseline", t_add_parameter),
     ("codeAction: remove parameter", "T1", "baseline", t_remove_parameter),
+    ("codeAction: create missing field", "T1", "baseline", t_create_missing_field),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
 ]
 

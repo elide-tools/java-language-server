@@ -50,7 +50,7 @@ public class CodeActionTest {
 
     @Test
     public void testAddThrows() {
-        assertThat(quickFix("org/javacs/action/TestAddThrows.java"), contains("Add 'throws'"));
+        assertThat(quickFix("org/javacs/action/TestAddThrows.java"), hasItem("Add 'throws'"));
     }
 
     @Test
@@ -99,6 +99,18 @@ public class CodeActionTest {
     @Test
     public void testCreateMissingMethod() {
         assertThat(quickFix("org/javacs/action/TestCreateMissingMethod.java"), hasItem("Create missing method"));
+    }
+
+    @Test
+    public void testCatchException() {
+        assertThat(
+                quickFix("org/javacs/action/TestCatchException.java"), hasItem("Surround with try/catch"));
+    }
+
+    @Test
+    public void testCreateMissingField() {
+        assertThat(
+                quickFix("org/javacs/action/TestCreateMissingField.java"), hasItem("Create field 'value'"));
     }
 
     private List<String> quickFix(String testFile) {

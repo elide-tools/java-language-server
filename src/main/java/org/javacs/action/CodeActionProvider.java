@@ -316,7 +316,10 @@ public class CodeActionProvider {
                                 needsThrow.methodName,
                                 needsThrow.erasedParameterTypes,
                                 exceptionName);
-                return createQuickFix("Add 'throws'", addThrows);
+                var actionsForException = new ArrayList<CodeAction>(createQuickFix("Add 'throws'", addThrows));
+                var surroundWithCatch = new CatchException(file, findPosition(task, d.range.start), exceptionName);
+                actionsForException.addAll(createQuickFix("Surround with try/catch", surroundWithCatch));
+                return actionsForException;
             case "compiler.err.cant.resolve":
             case "compiler.err.cant.resolve.location":
                 var simpleName = extractRange(task, d.range);
@@ -328,6 +331,9 @@ public class CodeActionProvider {
                         allImports.addAll(createQuickFix(title, addImport));
                     }
                 }
+                var fieldName = simpleName.toString().substring(simpleName.toString().lastIndexOf('.') + 1);
+                var createField = new CreateMissingField(file, findPosition(task, d.range.start));
+                allImports.addAll(createQuickFix("Create field '" + fieldName + "'", createField));
                 return allImports;
             case "compiler.err.var.not.initialized.in.default.constructor":
                 var needsConstructor = findClassNeedingConstructor(task, d.range);
