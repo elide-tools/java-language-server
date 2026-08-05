@@ -136,6 +136,37 @@ default-package acceptance harness cannot surface Flow-phase compiler diagnostic
 (e.g. unreported-exception), so a few quick fixes are validated by JUnit only —
 worth revisiting if the harness gains named-package fixtures.
 
+## Status (2026-08-05) — type rename (Tier 2)
+
+`textDocument/rename` previously refused classes/interfaces/enums/records
+(`canRename`/`createRewrite` had no type case — an explicit `TODO`). It now renames
+a type declaration and every reference across the workspace: the declaration name,
+constructor declarations, `new` expressions, plain/qualified type usages, and
+imports. Full JVM suite: **277 tests, 0 failures**; `feature_tests.py` target
+`rename type (declaration + references)` is `baseline` in the native image.
+
+- **`RenameType`** (`rewrite/`) seeds its file set from `findTypeReferences` (which
+  includes the declaration file for same-package/imported use) unioned with
+  `findTypeDeclaration`. Seeding from references — not `findTypeDeclaration` alone —
+  is deliberate: `findTypeDeclaration` misses **default-package** types, and the
+  same fallback was added to `canFindSource` so `prepareRename` offers the type
+  in a default-package project. (Another instance of the standing rule: prefer
+  reference/tree resolution over `getTypeElement`/source-path lookup where a
+  default-package project can reach.)
+- **`FindTypeReferences`** (`rewrite/`) visits class + constructor declarations and
+  identifier/member-select usages; `RenameHelper.renameType` resolves the target
+  `TypeElement` by **tree scan** (not `getTypeElement`) and matches by element
+  identity, plus constructors whose enclosing type is the target (covers `new Foo()`
+  and constructor decls).
+- **Edit computation** rewrites only the trailing simple name of a qualified use,
+  and dedupes edits by range: a class with no explicit constructor has a
+  synthesized `<init>` whose position collapses onto the class-name token, which
+  would otherwise double-edit the declaration. Degenerate (`< 0`) positions are
+  skipped.
+- **Not yet:** renaming the enclosing `.java` file for a public type. That needs a
+  `WorkspaceEdit.documentChanges` + `RenameFile` resource-op DTO (INFRA), which
+  `org.javacs.lsp.WorkspaceEdit` (only `changes`) does not model today.
+
 ## Why this is the right shape
 
 - JLS is built directly on **javac** (`com.sun.source.tree`, `javax.lang.model`,

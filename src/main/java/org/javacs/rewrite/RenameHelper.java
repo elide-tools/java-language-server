@@ -1,22 +1,27 @@
 package org.javacs.rewrite;
 
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -69,6 +74,110 @@ class RenameHelper {
             allEdits.put(file, fileEdits);
         }
         return allEdits;
+    }
+
+    Map<Path, TextEdit[]> renameType(List<CompilationUnitTree> roots, String className, String newName) {
+        var allEdits = new HashMap<Path, TextEdit[]>();
+        var target = findTypeElement(roots, className);
+        if (target == null) return Map.of();
+        var oldName = target.getSimpleName().toString();
+        for (var root : roots) {
+            var references = findTypeReferences(root, target);
+            if (references.isEmpty()) continue;
+            var fileEdits = replaceAllTypeNames(references, oldName, newName);
+            allEdits.put(Paths.get(root.getSourceFile().toUri()), fileEdits);
+        }
+        return allEdits;
+    }
+
+    private TypeElement findTypeElement(List<CompilationUnitTree> roots, String className) {
+        var trees = Trees.instance(task.task);
+        for (var root : roots) {
+            var found = new TypeElement[] {null};
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitClass(ClassTree node, Void nothing) {
+                    var element = trees.getElement(getCurrentPath());
+                    if (element instanceof TypeElement) {
+                        var type = (TypeElement) element;
+                        if (type.getQualifiedName().contentEquals(className)) {
+                            found[0] = type;
+                        }
+                    }
+                    return super.visitClass(node, nothing);
+                }
+            }.scan(root, null);
+            if (found[0] != null) return found[0];
+        }
+        return null;
+    }
+
+    private List<TreePath> findTypeReferences(CompilationUnitTree root, TypeElement target) {
+        var trees = Trees.instance(task.task);
+        var found = new ArrayList<TreePath>();
+        Consumer<TreePath> forEach =
+                path -> {
+                    if (isTypeReference(trees, path, target)) {
+                        found.add(path);
+                    }
+                };
+        new FindTypeReferences().scan(root, forEach);
+        return found;
+    }
+
+    private boolean isTypeReference(Trees trees, TreePath path, TypeElement target) {
+        var candidate = trees.getElement(path);
+        if (candidate == null) return false;
+        if (target.equals(candidate)) return true;
+        // `new Foo()`, `Foo::new`, and constructor declarations resolve to the constructor.
+        if (candidate.getKind() == ElementKind.CONSTRUCTOR) {
+            return target.equals(candidate.getEnclosingElement());
+        }
+        return false;
+    }
+
+    private TextEdit[] replaceAllTypeNames(List<TreePath> found, String oldName, String newName) {
+        var trees = Trees.instance(task.task);
+        var pos = trees.getSourcePositions();
+        // Keyed by range so an exact duplicate is dropped: a class with no explicit constructor has
+        // a synthesized `<init>` whose position collapses onto the class-name token, which would
+        // otherwise emit a second edit over the declaration name.
+        var byRange = new LinkedHashMap<String, TextEdit>();
+        for (var f : found) {
+            var root = f.getCompilationUnit();
+            var lines = root.getLineMap();
+            var leaf = f.getLeaf();
+            long startPos, endPos;
+            if (leaf instanceof IdentifierTree) {
+                // The identifier text is exactly the simple name (`Foo`, `new Foo()`, `@Foo`).
+                startPos = pos.getStartPosition(root, leaf);
+                endPos = pos.getEndPosition(root, leaf);
+            } else if (leaf instanceof MemberSelectTree) {
+                // Qualified use `pkg.Foo` or an import: rewrite only the trailing simple name.
+                var select = (MemberSelectTree) leaf;
+                startPos = pos.getEndPosition(root, select.getExpression());
+                if (startPos < 0) continue;
+                startPos = findName(root, startPos, oldName);
+                endPos = startPos + oldName.length();
+            } else {
+                // Type declaration (`class Foo`) or constructor declaration (`Foo(...)`): the leaf
+                // spans modifiers/keywords, so locate the first `oldName` token within it.
+                startPos = pos.getStartPosition(root, leaf);
+                if (startPos < 0) continue;
+                startPos = findName(root, startPos, oldName);
+                endPos = startPos + oldName.length();
+            }
+            if (startPos < 0 || endPos < 0) continue;
+            var startLine = (int) lines.getLineNumber(startPos);
+            var startColumn = (int) lines.getColumnNumber(startPos);
+            var endLine = (int) lines.getLineNumber(endPos);
+            var endColumn = (int) lines.getColumnNumber(endPos);
+            var range =
+                    new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+            var key = startLine + ":" + startColumn + "-" + endLine + ":" + endColumn;
+            byRange.putIfAbsent(key, new TextEdit(range, newName));
+        }
+        return byRange.values().toArray(new TextEdit[0]);
     }
 
     private List<TreePath> findVariableReferences(CompilationUnitTree root, Element target) {

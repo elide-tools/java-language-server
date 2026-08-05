@@ -548,9 +548,13 @@ class JavaLanguageServer extends LanguageServer {
             case LOCAL_VARIABLE:
             case PARAMETER:
             case EXCEPTION_PARAMETER:
+            case CLASS:
+            case INTERFACE:
+            case ENUM:
+            case RECORD:
+            case ANNOTATION_TYPE:
                 return true;
             default:
-                // TODO rename other types
                 return false;
         }
     }
@@ -560,7 +564,11 @@ class JavaLanguageServer extends LanguageServer {
         if (rename instanceof TypeElement) {
             var type = (TypeElement) rename;
             var name = type.getQualifiedName().toString();
-            return compiler().findTypeDeclaration(name) != CompilerProvider.NOT_FOUND;
+            // findTypeDeclaration misses default-package types; findTypeReferences (which includes
+            // the declaration file for same-package/imported use) is the robust source-reachability
+            // probe.
+            if (compiler().findTypeDeclaration(name) != CompilerProvider.NOT_FOUND) return true;
+            return compiler().findTypeReferences(name).length > 0;
         }
         return canFindSource(rename.getEnclosingElement());
     }
@@ -593,6 +601,12 @@ class JavaLanguageServer extends LanguageServer {
                 case PARAMETER:
                 case EXCEPTION_PARAMETER:
                     return renameVariable(task, (VariableElement) el, params.newName);
+                case CLASS:
+                case INTERFACE:
+                case ENUM:
+                case RECORD:
+                case ANNOTATION_TYPE:
+                    return renameType(task, (TypeElement) el, params.newName);
                 default:
                     return Rewrite.NOT_SUPPORTED;
             }
@@ -624,6 +638,11 @@ class JavaLanguageServer extends LanguageServer {
         var file = Paths.get(path.getCompilationUnit().getSourceFile().toUri());
         var position = trees.getSourcePositions().getStartPosition(path.getCompilationUnit(), path.getLeaf());
         return new RenameVariable(file, (int) position, newName);
+    }
+
+    private RenameType renameType(CompileTask task, TypeElement type, String newName) {
+        var className = type.getQualifiedName().toString();
+        return new RenameType(className, newName);
     }
 
     private void removeClass(Path file) {

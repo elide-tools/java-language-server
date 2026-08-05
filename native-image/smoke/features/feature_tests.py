@@ -478,6 +478,25 @@ def t_workspace_diagnostics(s):
     return bool(items), f"{len(items) if items else 0} reports"
 
 
+def t_rename_type(s):
+    pos = s.pos("RenameType.java", "class RenameType", "RenameType")
+    prep = s.req("textDocument/prepareRename", {
+        "textDocument": {"uri": s.uri("RenameType.java")},
+        "position": pos}, timeout=6)
+    if not prep or prep.get("placeholder") != "RenameType":
+        return False, f"prepare={prep}"
+    edit = s.req("textDocument/rename", {
+        "textDocument": {"uri": s.uri("RenameType.java")},
+        "position": pos, "newName": "Renamed"}, timeout=6)
+    changes = (edit or {}).get("changes") or {}
+    edits = []
+    for k, v in changes.items():
+        if str(k).endswith("RenameType.java"):
+            edits = v
+    allnew = bool(edits) and all(e.get("newText") == "Renamed" for e in edits)
+    # class decl + constructor decl + return type + `new` expression
+    return len(edits) == 4 and allnew, f"{len(edits)} edits, allRenamed={allnew}"
+
 TESTS = [
     # name, phase, kind, fn
     ("definition (baseline)", "-", "baseline", t_definition),
@@ -507,6 +526,7 @@ TESTS = [
     ("codeAction: remove parameter", "T1", "baseline", t_remove_parameter),
     ("codeAction: create missing field", "T1", "baseline", t_create_missing_field),
     ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
+    ("rename type (declaration + references)", "T2", "baseline", t_rename_type),
 ]
 
 
