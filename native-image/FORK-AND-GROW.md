@@ -130,8 +130,9 @@ lazy `canX` detection and `rewrite`/`resolve`, so a listed action never resolves
 to nothing.
 
 ### What's next
-The refactor/quick-fix catalog is complete. Remaining non-refactor targets:
-**C1 workspace/pull diagnostics** and **A6 formatting-in-Elide**. Note: the flat
+The refactor/quick-fix catalog is complete. Type rename (Tier 2) and C1
+workspace/pull diagnostics have since landed (see dated sections below). The only
+remaining non-refactor target is **A6 formatting-in-Elide**. Note: the flat
 default-package acceptance harness cannot surface Flow-phase compiler diagnostics
 (e.g. unreported-exception), so a few quick fixes are validated by JUnit only —
 worth revisiting if the harness gains named-package fixtures.
@@ -166,6 +167,33 @@ imports. Full JVM suite: **277 tests, 0 failures**; `feature_tests.py` target
 - **Not yet:** renaming the enclosing `.java` file for a public type. That needs a
   `WorkspaceEdit.documentChanges` + `RenameFile` resource-op DTO (INFRA), which
   `org.javacs.lsp.WorkspaceEdit` (only `changes`) does not model today.
+
+## Status (2026-08-05) — C1 workspace/pull diagnostics
+
+The pull-diagnostics model (LSP 3.17) now complements the existing push
+(`publishDiagnostics` on didOpen/didChange/didSave). Full JVM suite: **280 tests,
+0 failures**; `feature_tests.py` targets `workspace diagnostics` and
+`document diagnostics (pull)` are `baseline` in the native image.
+
+- **Capability:** `diagnosticProvider { interFileDependencies: true,
+  workspaceDiagnostics: true }`. `interFileDependencies` is true because a file's
+  Java diagnostics depend on other files (types/supertypes/imports).
+- **`workspace/diagnostic`** compiles `FileStore.all()` in one batch and returns a
+  full `WorkspaceDocumentDiagnosticReport` per document (via the existing
+  `ErrorProvider`), so clean files emit empty reports that clear stale diagnostics.
+  This is the explicit pull request, not as-you-type — no debounce needed; the
+  perf ceiling is one whole-workspace compile per request. (Incremental/partial
+  result streaming is a later optimization; the DTO already carries `resultId`.)
+- **`textDocument/diagnostic`** compiles the single requested file and returns its
+  full report. Implemented alongside workspace pull because advertising
+  `diagnosticProvider` obligates the server to answer document pull too —
+  otherwise a conformant client hangs on it.
+- **DTOs** (`WorkspaceDiagnosticReport`, `WorkspaceDocumentDiagnosticReport`,
+  `DocumentDiagnosticReport`, and the two params types) live under
+  `org.javacs.lsp`, so INFRA-1's `JlsNativeImageFeature` registers them for gson
+  reflection automatically — no metadata edit.
+- **Note:** push and pull both run; clients that opt into pull dedupe by uri, and
+  the push path is unchanged, so existing behavior is preserved.
 
 ## Why this is the right shape
 

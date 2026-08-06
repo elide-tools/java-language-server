@@ -81,6 +81,38 @@ class JavaLanguageServer extends LanguageServer {
         }
     }
 
+    @Override
+    public DocumentDiagnosticReport documentDiagnostics(DocumentDiagnosticParams params) {
+        var report = new DocumentDiagnosticReport();
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return report;
+        var file = Paths.get(params.textDocument.uri);
+        // compile(file) yields exactly this file as the sole root; aggregate its diagnostics.
+        try (var task = compiler().compile(file)) {
+            for (var errs : new ErrorProvider(task).errors()) {
+                report.items.addAll(errs.diagnostics);
+            }
+        }
+        return report;
+    }
+
+    @Override
+    public WorkspaceDiagnosticReport workspaceDiagnostics(WorkspaceDiagnosticParams params) {
+        var report = new WorkspaceDiagnosticReport();
+        var files = new ArrayList<>(FileStore.all());
+        if (files.isEmpty()) return report;
+        LOG.info("Workspace diagnostics over " + files.size() + " files...");
+        try (var task = compiler().compile(files.toArray(Path[]::new))) {
+            // One full report per compiled document, so clean files clear stale diagnostics too.
+            for (var errs : new ErrorProvider(task).errors()) {
+                var item = new WorkspaceDocumentDiagnosticReport();
+                item.uri = errs.uri;
+                item.items = errs.diagnostics;
+                report.items.add(item);
+            }
+        }
+        return report;
+    }
+
     private void javaStartProgress(JavaStartProgressParams params) {
         client.customNotification("java/startProgress", GSON.toJsonTree(params));
     }
@@ -230,6 +262,11 @@ class JavaLanguageServer extends LanguageServer {
         c.addProperty("inlayHintProvider", true);
         c.addProperty("callHierarchyProvider", true);
         c.addProperty("typeHierarchyProvider", true);
+        var diagnosticOptions = new JsonObject();
+        // Java diagnostics for one file depend on other files (types, supertypes, imports).
+        diagnosticOptions.addProperty("interFileDependencies", true);
+        diagnosticOptions.addProperty("workspaceDiagnostics", true);
+        c.add("diagnosticProvider", diagnosticOptions);
 
         return new InitializeResult(c);
     }

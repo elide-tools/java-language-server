@@ -545,6 +545,20 @@ public class LSP {
                             respond(send, r.id, response);
                             break;
                         }
+                    case "textDocument/diagnostic":
+                        {
+                            var params = gson.fromJson(r.params, DocumentDiagnosticParams.class);
+                            var response = server.documentDiagnostics(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
+                    case "workspace/diagnostic":
+                        {
+                            var params = gson.fromJson(r.params, WorkspaceDiagnosticParams.class);
+                            var response = server.workspaceDiagnostics(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
                     case "$/cancelRequest":
                         // Already handled in peek(message)
                         break;

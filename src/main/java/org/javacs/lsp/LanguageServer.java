@@ -172,5 +172,13 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public DocumentDiagnosticReport documentDiagnostics(DocumentDiagnosticParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public WorkspaceDiagnosticReport workspaceDiagnostics(WorkspaceDiagnosticParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public void doAsyncWork() {}
 }

@@ -472,10 +472,24 @@ def t_formatting(s):
 
 
 def t_workspace_diagnostics(s):
-    # pull-model workspace diagnostics
-    r = s.req("workspace/diagnostic", {"previousResultIds": []}, timeout=4)
+    # pull-model workspace diagnostics: one full report per source file, errors surfaced
+    r = s.req("workspace/diagnostic", {"previousResultIds": []}, timeout=6)
     items = (r or {}).get("items") if isinstance(r, dict) else None
-    return bool(items), f"{len(items) if items else 0} reports"
+    if not items:
+        return False, "no reports"
+    bad = next((it for it in items if str(it.get("uri", "")).endswith("DiagError.java")), None)
+    bad_diags = len(bad.get("items") or []) if bad else 0
+    ok = bad is not None and bad_diags >= 1
+    return ok, f"{len(items)} reports, DiagError diags={bad_diags}"
+
+
+def t_document_diagnostics(s):
+    # pull-model single-document diagnostics
+    r = s.req("textDocument/diagnostic", {
+        "textDocument": {"uri": s.uri("DiagError.java")}}, timeout=6)
+    items = (r or {}).get("items") if isinstance(r, dict) else None
+    kind = (r or {}).get("kind") if isinstance(r, dict) else None
+    return bool(items) and kind == "full", f"kind={kind}, {len(items) if items else 0} diagnostics"
 
 
 def t_rename_type(s):
@@ -525,7 +539,8 @@ TESTS = [
     ("codeAction: add parameter", "T1", "baseline", t_add_parameter),
     ("codeAction: remove parameter", "T1", "baseline", t_remove_parameter),
     ("codeAction: create missing field", "T1", "baseline", t_create_missing_field),
-    ("workspace diagnostics", "C", "target", t_workspace_diagnostics),
+    ("workspace diagnostics", "C", "baseline", t_workspace_diagnostics),
+    ("document diagnostics (pull)", "C", "baseline", t_document_diagnostics),
     ("rename type (declaration + references)", "T2", "baseline", t_rename_type),
 ]
 
