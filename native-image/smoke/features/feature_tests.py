@@ -492,6 +492,20 @@ def t_document_diagnostics(s):
     return bool(items) and kind == "full", f"kind={kind}, {len(items) if items else 0} diagnostics"
 
 
+def t_reference_codelens(s):
+    # lazy "N references" code lens: listed with no command + data, filled by codeLens/resolve
+    lenses = s.req("textDocument/codeLens", {
+        "textDocument": {"uri": s.uri("Geometry.java")}}, timeout=6)
+    if not lenses:
+        return False, "no lenses"
+    lazy = next((l for l in lenses if l.get("command") is None and l.get("data") is not None), None)
+    if lazy is None:
+        return False, "no lazy reference lens"
+    resolved = s.req("codeLens/resolve", lazy, timeout=6)
+    title = ((resolved or {}).get("command") or {}).get("title", "")
+    return "reference" in title, f"title={title!r}"
+
+
 def t_rename_type(s):
     pos = s.pos("RenameType.java", "class RenameType", "RenameType")
     prep = s.req("textDocument/prepareRename", {
@@ -542,6 +556,7 @@ TESTS = [
     ("workspace diagnostics", "C", "baseline", t_workspace_diagnostics),
     ("document diagnostics (pull)", "C", "baseline", t_document_diagnostics),
     ("rename type (declaration + references)", "T2", "baseline", t_rename_type),
+    ("reference code lens (lazy resolve)", "T2", "baseline", t_reference_codelens),
 ]
 
 

@@ -44,4 +44,15 @@ public class CodeLensTest {
         assertThat(commands, hasItem(containsString("\"org.javacs.example.HasTest\",\"testMethod\"")));
         assertThat(commands, hasItem(containsString("\"org.javacs.example.HasTest\",\"otherTestMethod\"")));
     }
+
+    @Test
+    public void referenceLenses() {
+        var lenses = lenses("/org/javacs/example/HasTest.java");
+        var titles = new ArrayList<String>();
+        for (var lens : lenses) {
+            titles.add(lens.command.title);
+        }
+        // every declaration gets a lazily-resolved "N reference(s)" lens
+        assertThat(titles, hasItem(containsString("reference")));
+    }
 }

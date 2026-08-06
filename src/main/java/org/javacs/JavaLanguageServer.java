@@ -235,6 +235,7 @@ class JavaLanguageServer extends LanguageServer {
         c.addProperty("documentSymbolProvider", true);
         c.addProperty("documentFormattingProvider", true);
         var codeLensOptions = new JsonObject();
+        codeLensOptions.addProperty("resolveProvider", true);
         c.add("codeLensProvider", codeLensOptions);
         c.addProperty("foldingRangeProvider", true);
         var codeActionOptions = new JsonObject();
@@ -524,7 +525,19 @@ class JavaLanguageServer extends LanguageServer {
 
     @Override
     public CodeLens resolveCodeLens(CodeLens unresolved) {
-        return null;
+        if (unresolved.data == null || !unresolved.data.isJsonObject()) return unresolved;
+        var data = unresolved.data.getAsJsonObject();
+        if (!data.has("uri") || !data.has("line") || !data.has("character")) return unresolved;
+        var uri = java.net.URI.create(data.get("uri").getAsString());
+        if (!FileStore.isJavaFile(uri)) return unresolved;
+        var file = Paths.get(uri);
+        var line = data.get("line").getAsInt() + 1;
+        var column = data.get("character").getAsInt() + 1;
+        var references = new ReferenceProvider(compiler(), file, line, column).find();
+        var count = references.size();
+        var title = count == 1 ? "1 reference" : count + " references";
+        unresolved.command = new Command(title, "", new JsonArray());
+        return unresolved;
     }
 
     @Override

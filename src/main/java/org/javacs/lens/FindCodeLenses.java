@@ -2,12 +2,14 @@ package org.javacs.lens;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.javacs.FileStore;
+import org.javacs.FindHelper;
 import org.javacs.lsp.CodeLens;
 import org.javacs.lsp.Command;
 import org.javacs.lsp.Position;
@@ -36,6 +38,10 @@ class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
         if (isTestClass(t)) {
             list.add(runAllTests(t));
         }
+        var classRefs = referenceLens(t, t.getSimpleName());
+        if (classRefs != null) {
+            list.add(classRefs);
+        }
         var result = super.visitClass(t, list);
         qualifiedName.remove(qualifiedName.size() - 1);
         return result;
@@ -46,6 +52,12 @@ class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
         if (isTestMethod(t)) {
             list.add(runTest(t));
             list.add(debugTest(t));
+        }
+        if (!t.getName().contentEquals("<init>")) {
+            var methodRefs = referenceLens(t, t.getName());
+            if (methodRefs != null) {
+                list.add(methodRefs);
+            }
         }
         return super.visitMethod(t, list);
     }
@@ -108,6 +120,29 @@ class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
         var command = new Command("Debug Test", "java.command.test.debug", arguments);
         var range = range(t);
         return new CodeLens(range, command, null);
+    }
+
+    /**
+     * A lazy "N references" lens over a declaration's name: no command (so the client requests
+     * `codeLens/resolve`), carrying the name position in `data` for the reference count.
+     */
+    private CodeLens referenceLens(Tree t, CharSequence name) {
+        if (name.length() == 0) return null;
+        var pos = Trees.instance(task).getSourcePositions();
+        var lines = root.getLineMap();
+        var start = (int) pos.getStartPosition(root, t);
+        var end = (int) pos.getEndPosition(root, t);
+        if (start < 0 || end < 0) return null;
+        var nameStart = FindHelper.findNameIn(root, name, start, end);
+        if (nameStart < 0) return null;
+        var line = (int) lines.getLineNumber(nameStart) - 1;
+        var character = (int) lines.getColumnNumber(nameStart) - 1;
+        var range = new Range(new Position(line, character), new Position(line, character + name.length()));
+        var data = new JsonObject();
+        data.addProperty("uri", root.getSourceFile().toUri().toString());
+        data.addProperty("line", line);
+        data.addProperty("character", character);
+        return new CodeLens(range, null, data);
     }
 
     private Range range(Tree t) {
