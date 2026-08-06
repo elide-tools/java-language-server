@@ -528,3 +528,11 @@ hooks + staged `java.home` (so the runtime-JDK requirement is free), swaps
 `InferConfig` for `MavenClasspathProvider`, wires `elide lsp` → `LSP.connect`,
 and gains google-java-format formatting. INFRA-1's DTO reflection folds into
 Elide's `reachability-metadata.json`.
+
+The detailed, decision-locked fold plan lives in aura at
+`docs/superpowers/plans/2026-08-05-jls-elide-fold.md`: `elide lsp` becomes a
+language-server provider registry (JLS is the first, Java, provider; more
+languages add additively), JLS vendors as source into an isolated root, and the
+build delta is just 4 `--add-exports` + 1 `--add-opens` — most javac exports,
+`AllowJRTFileSystem`, jrtfs/zipfs, and the `SystemImage` substitution already
+ship in Elide's image.
