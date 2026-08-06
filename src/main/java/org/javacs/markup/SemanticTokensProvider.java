@@ -14,6 +14,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import org.javacs.CompilerProvider;
 import org.javacs.FileStore;
+import org.javacs.lsp.Range;
 
 /**
  * `textDocument/semanticTokens/full`: classify every identifier/member-select/
@@ -36,28 +37,57 @@ public class SemanticTokensProvider {
     }
 
     public int[] tokens(Path file) {
+        return encode(rawTokens(file, null));
+    }
+
+    /** Tokens whose start position falls within {@code range} — for `semanticTokens/range`. */
+    public int[] tokensInRange(Path file, Range range) {
+        return encode(rawTokens(file, range));
+    }
+
+    private List<int[]> rawTokens(Path file, Range range) {
         try (var task = compiler.compile(file)) {
             var root = task.root(file);
             var raw = new ArrayList<int[]>(); // {line, startChar, length, tokenType}
             new Tokenizer(task.task, file).scan(root, raw);
             raw.sort((a, b) -> a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
-            var data = new int[raw.size() * 5];
-            var i = 0;
-            var prevLine = 0;
-            var prevChar = 0;
-            for (var t : raw) {
-                var deltaLine = t[0] - prevLine;
-                var deltaChar = deltaLine == 0 ? t[1] - prevChar : t[1];
-                data[i++] = deltaLine;
-                data[i++] = deltaChar;
-                data[i++] = t[2];
-                data[i++] = t[3];
-                data[i++] = 0; // no modifiers
-                prevLine = t[0];
-                prevChar = t[1];
+            if (range != null) {
+                raw.removeIf(t -> !inRange(t, range));
             }
-            return data;
+            return raw;
         }
+    }
+
+    private static boolean inRange(int[] t, Range range) {
+        var line = t[0];
+        var character = t[1];
+        if (line < range.start.line || (line == range.start.line && character < range.start.character)) {
+            return false;
+        }
+        if (line > range.end.line || (line == range.end.line && character > range.end.character)) {
+            return false;
+        }
+        return true;
+    }
+
+    /** LSP delta-encode a sorted list of absolute {line, startChar, length, tokenType} tokens. */
+    private static int[] encode(List<int[]> raw) {
+        var data = new int[raw.size() * 5];
+        var i = 0;
+        var prevLine = 0;
+        var prevChar = 0;
+        for (var t : raw) {
+            var deltaLine = t[0] - prevLine;
+            var deltaChar = deltaLine == 0 ? t[1] - prevChar : t[1];
+            data[i++] = deltaLine;
+            data[i++] = deltaChar;
+            data[i++] = t[2];
+            data[i++] = t[3];
+            data[i++] = 0; // no modifiers
+            prevLine = t[0];
+            prevChar = t[1];
+        }
+        return data;
     }
 
     private static int tokenType(ElementKind kind) {

@@ -144,6 +144,14 @@ public class LanguageServer {
         throw new RuntimeException("Unimplemented");
     }
 
+    public Optional<SemanticTokens> semanticTokensRange(SemanticTokensRangeParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
+    public Optional<SemanticTokens> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
+        throw new RuntimeException("Unimplemented");
+    }
+
     public List<InlayHint> inlayHint(InlayHintParams params) {
         throw new RuntimeException("Unimplemented");
     }

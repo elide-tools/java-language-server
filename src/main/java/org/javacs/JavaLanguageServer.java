@@ -258,7 +258,10 @@ class JavaLanguageServer extends LanguageServer {
         semanticTokensLegend.add("tokenTypes", tokenTypes);
         semanticTokensLegend.add("tokenModifiers", new JsonArray());
         semanticTokensOptions.add("legend", semanticTokensLegend);
-        semanticTokensOptions.addProperty("full", true);
+        var semanticTokensFull = new JsonObject();
+        semanticTokensFull.addProperty("delta", true);
+        semanticTokensOptions.add("full", semanticTokensFull);
+        semanticTokensOptions.addProperty("range", true);
         c.add("semanticTokensProvider", semanticTokensOptions);
         c.addProperty("inlayHintProvider", true);
         c.addProperty("callHierarchyProvider", true);
@@ -456,7 +459,37 @@ class JavaLanguageServer extends LanguageServer {
         if (!FileStore.isJavaFile(params.textDocument.uri)) return Optional.empty();
         var file = Paths.get(params.textDocument.uri);
         var data = new SemanticTokensProvider(compiler()).tokens(file);
-        return Optional.of(new SemanticTokens(data));
+        var tokens = new SemanticTokens(data);
+        tokens.resultId = nextSemanticTokensResultId();
+        return Optional.of(tokens);
+    }
+
+    @Override
+    public Optional<SemanticTokens> semanticTokensRange(SemanticTokensRangeParams params) {
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return Optional.empty();
+        var file = Paths.get(params.textDocument.uri);
+        var data = new SemanticTokensProvider(compiler()).tokensInRange(file, params.range);
+        var tokens = new SemanticTokens(data);
+        tokens.resultId = nextSemanticTokensResultId();
+        return Optional.of(tokens);
+    }
+
+    @Override
+    public Optional<SemanticTokens> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
+        // We don't compute token diffs; a full token set with a fresh resultId is a spec-permitted
+        // response to a delta request (SemanticTokens instead of SemanticTokensDelta).
+        if (!FileStore.isJavaFile(params.textDocument.uri)) return Optional.empty();
+        var file = Paths.get(params.textDocument.uri);
+        var data = new SemanticTokensProvider(compiler()).tokens(file);
+        var tokens = new SemanticTokens(data);
+        tokens.resultId = nextSemanticTokensResultId();
+        return Optional.of(tokens);
+    }
+
+    private long semanticTokensResultId = 0;
+
+    private String nextSemanticTokensResultId() {
+        return Long.toString(++semanticTokensResultId);
     }
 
     @Override

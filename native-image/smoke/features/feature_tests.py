@@ -506,6 +506,27 @@ def t_reference_codelens(s):
     return "reference" in title, f"title={title!r}"
 
 
+def t_semantic_range(s):
+    full = s.req("textDocument/semanticTokens/full", {
+        "textDocument": {"uri": s.uri("Geometry.java")}}, timeout=6)
+    fd = (full or {}).get("data") or []
+    r = s.req("textDocument/semanticTokens/range", {
+        "textDocument": {"uri": s.uri("Geometry.java")},
+        "range": {"start": {"line": 0, "character": 0}, "end": {"line": 4, "character": 0}}}, timeout=6)
+    data = (r or {}).get("data") if isinstance(r, dict) else None
+    ok = bool(data) and len(data) % 5 == 0 and len(data) < len(fd)
+    return ok, f"range={len(data) if data else 0} ints, full={len(fd)}"
+
+
+def t_semantic_delta(s):
+    # delta falls back to a full token set with a resultId (spec-permitted)
+    r = s.req("textDocument/semanticTokens/full/delta", {
+        "textDocument": {"uri": s.uri("Geometry.java")},
+        "previousResultId": "stale"}, timeout=6)
+    data = (r or {}).get("data") if isinstance(r, dict) else None
+    return bool(data) and len(data) % 5 == 0, f"{len(data) if data else 0} ints, resultId={(r or {}).get('resultId')}"
+
+
 def t_rename_type(s):
     pos = s.pos("RenameType.java", "class RenameType", "RenameType")
     prep = s.req("textDocument/prepareRename", {
@@ -557,6 +578,8 @@ TESTS = [
     ("document diagnostics (pull)", "C", "baseline", t_document_diagnostics),
     ("rename type (declaration + references)", "T2", "baseline", t_rename_type),
     ("reference code lens (lazy resolve)", "T2", "baseline", t_reference_codelens),
+    ("semanticTokens/range", "T2", "baseline", t_semantic_range),
+    ("semanticTokens/full/delta", "T2", "baseline", t_semantic_delta),
 ]
 
 

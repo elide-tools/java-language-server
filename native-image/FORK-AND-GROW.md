@@ -195,6 +195,31 @@ The pull-diagnostics model (LSP 3.17) now complements the existing push
 - **Note:** push and pull both run; clients that opt into pull dedupe by uri, and
   the push path is unchanged, so existing behavior is preserved.
 
+## Status (2026-08-05) — editor polish: reference lenses + semanticTokens range/delta
+
+Two small standalone items closed out before the Elide fold. Full JVM suite:
+**283 tests, 0 failures**; `feature_tests.py` targets `reference code lens (lazy
+resolve)`, `semanticTokens/range`, and `semanticTokens/full/delta` are `baseline`.
+
+- **Reference code lenses.** `FindCodeLenses` emits a lazy "N references" lens over
+  every class/interface/enum/record and non-constructor method (listed with no
+  command + a `data` descriptor: uri + name position). `resolveCodeLens` (was a
+  `null` stub; `resolveProvider` was never advertised) fills the title by running
+  `ReferenceProvider` at that position — one workspace search per lens, only when
+  the client resolves it. `data` is a `JsonObject` (gson-special-cased, no
+  reflection). Eager test-run lenses are unchanged and stack alongside.
+- **`semanticTokens/range`.** `SemanticTokensProvider` refactored to share the
+  delta encoder; `tokensInRange` filters tokens whose start falls within the
+  requested range, so large files can tokenize the viewport instead of the whole
+  file. Capability now advertises `range: true`.
+- **`semanticTokens/full/delta`.** Advertised via `full: { delta: true }`.
+  Responds with a full token set carrying a fresh `resultId` — a spec-permitted
+  response to a delta request (`SemanticTokens` instead of `SemanticTokensDelta`).
+  True prefix/suffix diffing is a later optimization; the honest fallback keeps a
+  conformant client working without result-cache state.
+- New DTOs (`SemanticTokensRangeParams`, `SemanticTokensDeltaParams`) live under
+  `org.javacs.lsp`, so INFRA-1 registers them for gson reflection automatically.
+
 ## Why this is the right shape
 
 - JLS is built directly on **javac** (`com.sun.source.tree`, `javax.lang.model`,

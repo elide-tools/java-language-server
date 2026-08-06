@@ -433,6 +433,20 @@ public class LSP {
                             respond(send, r.id, response);
                             break;
                         }
+                    case "textDocument/semanticTokens/range":
+                        {
+                            var params = gson.fromJson(r.params, SemanticTokensRangeParams.class);
+                            var response = server.semanticTokensRange(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
+                    case "textDocument/semanticTokens/full/delta":
+                        {
+                            var params = gson.fromJson(r.params, SemanticTokensDeltaParams.class);
+                            var response = server.semanticTokensFullDelta(params);
+                            respond(send, r.id, response);
+                            break;
+                        }
                     case "textDocument/inlayHint":
                         {
                             var params = gson.fromJson(r.params, InlayHintParams.class);
