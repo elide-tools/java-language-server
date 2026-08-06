@@ -492,15 +492,32 @@ Per feature, as it lands:
    against the Elide-built binary (same fixture, same request/assert), so the
    feature is defended where it ships.
 
-## Suggested order (value / effort)
+## Pre-fold backlog — COMPLETE (2026-08-05)
 
-1. INFRA-1 (unblocks codeAction + all future DTOs) — tiny, high value.
-2. A1–A5 (navigation/highlight/selection) — each ~a provider, all GREEN-able fast.
-3. B1 semanticTokens (reuse existing color engine) + A6 formatting-in-Elide.
-4. B3/B4 hierarchies, B2 inlay hints.
-5. B5/B6 code-gen + organizeImports.
-6. C1 workspace diagnostics (perf-scoped).
-7. APT investigation note → decide.
+Everything standalone (native-image-safe, no Elide dependency) is landed on
+`native-image`, one commit + JUnit + in-image harness case each. Full JVM suite
+**283 tests, 0 failures**; harness `baseline: OK`.
+
+1. [x] INFRA-1 (blanket DTO reflection).
+2. [x] A1–A5 navigation/highlight/selection.
+3. [x] B1 semanticTokens/full; B2 inlayHint; B3/B4 call/type hierarchy; B5/B6
+   code-gen + organizeImports.
+4. [x] `codeAction/resolve` + the 10-item refactor/quick-fix catalog.
+5. [x] Type rename (declaration + references).
+6. [x] C1 workspace + document pull diagnostics.
+7. [x] Reference code lenses (lazy `resolveCodeLens`).
+8. [x] semanticTokens/range + full/delta.
+
+**Remaining is not standalone:**
+- [ ] **A6 formatting** — the only harness `target` left; lands *in* the fold via
+  Elide's google-java-format (`GoogleJavaFormat.kt`). Doing it here duplicates
+  work the fold deletes.
+- [ ] **Real classpath/project model** — `MavenClasspathProvider` replaces
+  `InferConfig`; fold work.
+- [ ] **APT** — investigation-gated (see the annotation-processing note above),
+  needs Elide's staged JDK for the subprocess escape hatch.
+
+There is no further standalone JLS-branch work before the fold.
 
 ## Relationship to Phase 4/6 (Elide fold)
 
