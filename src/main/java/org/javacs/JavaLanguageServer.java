@@ -33,8 +33,10 @@ import org.javacs.navigation.InlayHintProvider;
 import org.javacs.navigation.CallHierarchyProvider;
 import org.javacs.navigation.TypeHierarchyProvider;
 import org.javacs.rewrite.*;
+import org.javacs.embed.ClasspathProvider;
+import org.javacs.embed.JavaFormatter;
 
-class JavaLanguageServer extends LanguageServer {
+public class JavaLanguageServer extends LanguageServer {
     // TODO allow multiple workspace roots
     private Path workspaceRoot;
     private final LanguageClient client;
@@ -42,6 +44,8 @@ class JavaLanguageServer extends LanguageServer {
     private JsonObject cacheSettings;
     private JsonObject settings = new JsonObject();
     private boolean modifiedBuild = true;
+    private final ClasspathProvider classpathProvider;
+    private final JavaFormatter formatter;
 
     JavaCompilerService compiler() {
         if (needsCompiler()) {
@@ -135,6 +139,16 @@ class JavaLanguageServer extends LanguageServer {
         var classPath = classPath();
         var extraArgs = extraCompilerArgs();
         var addExports = addExports();
+        // An embedding host (e.g. Elide) supplies the resolved classpath directly; it takes
+        // precedence over user settings and built-in inference.
+        if (classpathProvider != null) {
+            var provided = classpathProvider.classpath(workspaceRoot);
+            if (!provided.isEmpty()) {
+                javaEndProgress();
+                return new JavaCompilerService(
+                        provided, classpathProvider.docPath(workspaceRoot), addExports, extraArgs);
+            }
+        }
         // If classpath is specified by the user, don't infer anything
         if (!classPath.isEmpty()) {
             javaEndProgress();
@@ -300,7 +314,13 @@ class JavaLanguageServer extends LanguageServer {
     public void shutdown() {}
 
     public JavaLanguageServer(LanguageClient client) {
+        this(client, null, null);
+    }
+
+    public JavaLanguageServer(LanguageClient client, ClasspathProvider classpathProvider, JavaFormatter formatter) {
         this.client = client;
+        this.classpathProvider = classpathProvider;
+        this.formatter = formatter;
     }
 
     @Override
@@ -575,8 +595,11 @@ class JavaLanguageServer extends LanguageServer {
 
     @Override
     public List<TextEdit> formatting(DocumentFormattingParams params) {
-        var edits = new ArrayList<TextEdit>();
         var file = Paths.get(params.textDocument.uri);
+        if (formatter != null) {
+            return formatter.format(file, FileStore.contents(file), null);
+        }
+        var edits = new ArrayList<TextEdit>();
         var fixImports = new AutoFixImports(file).rewrite(compiler()).get(file);
         Collections.addAll(edits, fixImports);
         var addOverrides = new AutoAddOverrides(file).rewrite(compiler()).get(file);
