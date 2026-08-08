@@ -2,12 +2,14 @@ package org.javacs;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+
 import javax.lang.model.util.*;
 import javax.tools.*;
 
@@ -16,6 +18,7 @@ class CompileBatch implements AutoCloseable {
 
     final JavaCompilerService parent;
     final ReusableCompiler.Borrow borrow;
+
     /** Indicates the task that requested the compilation is finished with it. */
     boolean closed;
 
@@ -47,8 +50,8 @@ class CompileBatch implements AutoCloseable {
     }
 
     /**
-     * If the compilation failed because javac didn't find some package-private files in source files with different
-     * names, list those source files.
+     * If the compilation failed because javac didn't find some package-private files in source
+     * files with different names, list those source files.
      */
     Set<Path> needsAdditionalSources() {
         // Check for "class not found errors" that refer to package private classes
@@ -104,15 +107,21 @@ class CompileBatch implements AutoCloseable {
             JavaCompilerService parent, Collection<? extends JavaFileObject> sources) {
         parent.diags.clear();
         var options = options(parent.classPath, parent.addExports, parent.extraArgs);
-        return parent.compiler.getTask(parent.fileManager, parent.diags::add, options, List.of(), sources);
+        return parent.compiler.getTask(
+                parent.fileManager, parent.diags::add, options, List.of(), sources);
     }
 
-    /** Combine source path or class path entries using the system separator, for example ':' in unix */
+    /**
+     * Combine source path or class path entries using the system separator, for example ':' in unix
+     */
     private static String joinPath(Collection<Path> classOrSourcePath) {
-        return classOrSourcePath.stream().map(Path::toString).collect(Collectors.joining(File.pathSeparator));
+        return classOrSourcePath.stream()
+                .map(Path::toString)
+                .collect(Collectors.joining(File.pathSeparator));
     }
 
-    private static List<String> options(Set<Path> classPath, Set<String> addExports, List<String> extraArgs) {
+    private static List<String> options(
+            Set<Path> classPath, Set<String> addExports, List<String> extraArgs) {
         var list = new ArrayList<String>();
 
         Collections.addAll(list, "-classpath", joinPath(classPath));
@@ -143,6 +152,8 @@ class CompileBatch implements AutoCloseable {
     }
 
     private boolean isValidFileRange(javax.tools.Diagnostic<? extends JavaFileObject> d) {
-        return d.getSource().toUri().getScheme().equals("file") && d.getStartPosition() >= 0 && d.getEndPosition() >= 0;
+        return d.getSource().toUri().getScheme().equals("file")
+                && d.getStartPosition() >= 0
+                && d.getEndPosition() >= 0;
     }
 }

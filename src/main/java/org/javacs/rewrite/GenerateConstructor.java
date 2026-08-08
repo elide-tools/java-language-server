@@ -6,23 +6,26 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
 import com.sun.source.util.Trees;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+
+import javax.lang.model.element.Modifier;
+
 /**
- * Generate a constructor that initializes every uninitialized, non-static field
- * of a class. Companion to {@link GenerateRecordConstructor} (which only handles
- * final fields). The class is located by tree scan so unnamed-package types work.
+ * Generate a constructor that initializes every uninitialized, non-static field of a class.
+ * Companion to {@link GenerateRecordConstructor} (which only handles final fields). The class is
+ * located by tree scan so unnamed-package types work.
  */
 public class GenerateConstructor implements Rewrite {
     final Path file;

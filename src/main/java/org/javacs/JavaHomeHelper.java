@@ -86,7 +86,8 @@ class JavaHomeHelper {
                 throw new RuntimeException(e);
             }
             for (var jdk : list) {
-                if (Files.exists(jdk.resolve("bin/javac")) || Files.exists(jdk.resolve("bin/javac.exe"))) {
+                if (Files.exists(jdk.resolve("bin/javac"))
+                        || Files.exists(jdk.resolve("bin/javac.exe"))) {
                     return jdk;
                 }
             }

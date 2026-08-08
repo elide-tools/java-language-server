@@ -5,6 +5,13 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.Trees;
+
+import org.javacs.CompileTask;
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.Position;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -12,12 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+
 import javax.lang.model.element.Modifier;
-import org.javacs.CompileTask;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.Position;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 public class GenerateRecordConstructor implements Rewrite {
     final String className;

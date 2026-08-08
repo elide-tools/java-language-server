@@ -2,17 +2,20 @@ package org.javacs.markup;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
+import org.javacs.CompileTask;
+import org.javacs.FileStore;
+import org.javacs.lsp.*;
+
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import org.javacs.CompileTask;
-import org.javacs.FileStore;
-import org.javacs.lsp.*;
 
 public class ErrorProvider {
     final CompileTask task;
@@ -39,7 +42,8 @@ public class ErrorProvider {
     private List<org.javacs.lsp.Diagnostic> compilerErrors(CompilationUnitTree root) {
         var result = new ArrayList<org.javacs.lsp.Diagnostic>();
         for (var d : task.diagnostics) {
-            if (d.getSource() == null || !d.getSource().toUri().equals(root.getSourceFile().toUri())) continue;
+            if (d.getSource() == null
+                    || !d.getSource().toUri().equals(root.getSourceFile().toUri())) continue;
             if (d.getStartPosition() == -1 || d.getEndPosition() == -1) continue;
             result.add(lspDiagnostic(d, root.getLineMap()));
         }
@@ -67,10 +71,11 @@ public class ErrorProvider {
     }
 
     /**
-     * lspDiagnostic(d, lines) converts d to LSP format, with its position shifted appropriately for the latest version
-     * of the file.
+     * lspDiagnostic(d, lines) converts d to LSP format, with its position shifted appropriately for
+     * the latest version of the file.
      */
-    private org.javacs.lsp.Diagnostic lspDiagnostic(javax.tools.Diagnostic<? extends JavaFileObject> d, LineMap lines) {
+    private org.javacs.lsp.Diagnostic lspDiagnostic(
+            javax.tools.Diagnostic<? extends JavaFileObject> d, LineMap lines) {
         var start = d.getStartPosition();
         var end = d.getEndPosition();
         var startLine = (int) lines.getLineNumber(start);
@@ -85,7 +90,9 @@ public class ErrorProvider {
         result.code = code;
         result.message = message;
         result.range =
-                new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+                new Range(
+                        new Position(startLine - 1, startColumn - 1),
+                        new Position(endLine - 1, endColumn - 1));
         if (code.equals("compiler.warn.has.been.deprecated")) {
             result.tags = List.of(DiagnosticTag.Deprecated);
         }
@@ -184,7 +191,12 @@ public class ErrorProvider {
     }
 
     private static org.javacs.lsp.Diagnostic lspWarnUnused(
-            int severity, String code, String message, int start, int end, CompilationUnitTree root) {
+            int severity,
+            String code,
+            String message,
+            int start,
+            int end,
+            CompilationUnitTree root) {
         var result = new org.javacs.lsp.Diagnostic();
         result.severity = severity;
         result.code = code;

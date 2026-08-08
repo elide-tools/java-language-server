@@ -2,6 +2,7 @@ package org.javacs.hover;
 
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.*;
@@ -53,7 +54,10 @@ public class ShortTypePrinter extends AbstractTypeVisitor8<String, Void> {
         var result = t.asElement().toString();
 
         if (!t.getTypeArguments().isEmpty()) {
-            String params = t.getTypeArguments().stream().map(this::print).collect(Collectors.joining(", "));
+            String params =
+                    t.getTypeArguments().stream()
+                            .map(this::print)
+                            .collect(Collectors.joining(", "));
 
             result += "<" + params + ">";
         }
@@ -61,7 +65,8 @@ public class ShortTypePrinter extends AbstractTypeVisitor8<String, Void> {
         if (packageContext.equals("*")) return result.substring(result.lastIndexOf('.') + 1);
         else if (result.startsWith("java.lang")) return result.substring("java.lang.".length());
         else if (result.startsWith("java.util")) return result.substring("java.util.".length());
-        else if (result.startsWith(packageContext)) return result.substring(packageContext.length());
+        else if (result.startsWith(packageContext))
+            return result.substring(packageContext.length());
         else return result;
     }
 
@@ -103,7 +108,8 @@ public class ShortTypePrinter extends AbstractTypeVisitor8<String, Void> {
     }
 
     public static boolean missingParamNames(ExecutableElement e) {
-        return e.getParameters().stream().allMatch(p -> p.getSimpleName().toString().matches("arg\\d+"));
+        return e.getParameters().stream()
+                .allMatch(p -> p.getSimpleName().toString().matches("arg\\d+"));
     }
 
     private String printArguments(ExecutableElement e) {

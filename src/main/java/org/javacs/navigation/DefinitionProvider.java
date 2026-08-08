@@ -1,18 +1,21 @@
 package org.javacs.navigation;
 
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
-import javax.tools.JavaFileObject;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.SourceFileObject;
 import org.javacs.lsp.Location;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
+import javax.tools.JavaFileObject;
 
 public class DefinitionProvider {
     private final CompilerProvider compiler;
@@ -36,7 +39,8 @@ public class DefinitionProvider {
                 task.close();
                 return findError(element);
             }
-            // TODO instead of checking isLocal, just try to resolve the location, fall back to searching
+            // TODO instead of checking isLocal, just try to resolve the location, fall back to
+            // searching
             if (NavigationHelper.isLocal(element)) {
                 return findDefinitions(task, element);
             }

@@ -2,13 +2,15 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * Introduce a local variable for the expression selected by [start, end). Inserts {@code var
@@ -51,8 +53,14 @@ public class ExtractVariable implements Rewrite {
             var declaration = "var " + name + " = " + exprText + ";\n" + indent;
             var insertPos = new Position(stmtLine - 1, stmtColumn - 1);
             var insert = new TextEdit(new Range(insertPos, insertPos), declaration);
-            var startPos = new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1);
-            var endPos = new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1);
+            var startPos =
+                    new Position(
+                            (int) lines.getLineNumber(start) - 1,
+                            (int) lines.getColumnNumber(start) - 1);
+            var endPos =
+                    new Position(
+                            (int) lines.getLineNumber(end) - 1,
+                            (int) lines.getColumnNumber(end) - 1);
             var replace = new TextEdit(new Range(startPos, endPos), name);
             TextEdit[] edits = {insert, replace};
             return Map.of(file, edits);
@@ -78,10 +86,13 @@ public class ExtractVariable implements Rewrite {
         return result[0];
     }
 
-    /** The statement that directly encloses the expression within a block (a valid insertion point). */
+    /**
+     * The statement that directly encloses the expression within a block (a valid insertion point).
+     */
     private Tree enclosingBlockStatement(TreePath path) {
         for (var p = path; p != null && p.getParentPath() != null; p = p.getParentPath()) {
-            if (p.getLeaf() instanceof StatementTree && p.getParentPath().getLeaf() instanceof BlockTree) {
+            if (p.getLeaf() instanceof StatementTree
+                    && p.getParentPath().getLeaf() instanceof BlockTree) {
                 return p.getLeaf();
             }
         }

@@ -4,6 +4,7 @@ package org.javacs.debug.proto;
 public class ProtocolMessage {
     /** Sequence number. */
     public int seq;
+
     /** Message type. Values: 'request', 'response', 'event', etc. */
     public String type;
 }

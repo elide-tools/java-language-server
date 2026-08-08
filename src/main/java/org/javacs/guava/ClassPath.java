@@ -48,14 +48,14 @@ import java.util.stream.Stream;
  * <p><b>Warning:</b> Current limitations:
  *
  * <ul>
- *   <li>Looks only for files and JARs in URLs available from {@link URLClassLoader} instances or the {@linkplain
- *       ClassLoader#getSystemClassLoader() system class loader}.
+ *   <li>Looks only for files and JARs in URLs available from {@link URLClassLoader} instances or
+ *       the {@linkplain ClassLoader#getSystemClassLoader() system class loader}.
  *   <li>Only understands {@code file:} URLs.
  * </ul>
  *
- * <p>In the case of directory classloaders, symlinks are supported but cycles are not traversed. This guarantees
- * discovery of each <em>unique</em> loadable resource. However, not all possible aliases for resources on cyclic paths
- * will be listed.
+ * <p>In the case of directory classloaders, symlinks are supported but cycles are not traversed.
+ * This guarantees discovery of each <em>unique</em> loadable resource. However, not all possible
+ * aliases for resources on cyclic paths will be listed.
  *
  * @author Ben Yu
  * @since 14.0
@@ -72,19 +72,20 @@ public final class ClassPath {
     }
 
     /**
-     * Returns a {@code ClassPath} representing all classes and resources loadable from {@code classloader} and its
-     * ancestor class loaders.
+     * Returns a {@code ClassPath} representing all classes and resources loadable from {@code
+     * classloader} and its ancestor class loaders.
      *
      * <p><b>Warning:</b> {@code ClassPath} can find classes and resources only from:
      *
      * <ul>
      *   <li>{@link URLClassLoader} instances' {@code file:} URLs
-     *   <li>the {@linkplain ClassLoader#getSystemClassLoader() system class loader}. To search the system class loader
-     *       even when it is not a {@link URLClassLoader} (as in Java 9), {@code ClassPath} searches the files from the
-     *       {@code java.class.path} system property.
+     *   <li>the {@linkplain ClassLoader#getSystemClassLoader() system class loader}. To search the
+     *       system class loader even when it is not a {@link URLClassLoader} (as in Java 9), {@code
+     *       ClassPath} searches the files from the {@code java.class.path} system property.
      * </ul>
      *
-     * @throws IOException if the attempt to read class path resources (jar files or directories) failed.
+     * @throws IOException if the attempt to read class path resources (jar files or directories)
+     *     failed.
      */
     public static ClassPath from(ClassLoader classloader) throws IOException {
         DefaultScanner scanner = new DefaultScanner();
@@ -93,8 +94,8 @@ public final class ClassPath {
     }
 
     /**
-     * Returns all resources loadable from the current class path, including the class files of all loadable classes but
-     * excluding the "META-INF/MANIFEST.MF" file.
+     * Returns all resources loadable from the current class path, including the class files of all
+     * loadable classes but excluding the "META-INF/MANIFEST.MF" file.
      */
     public Set<ResourceInfo> getResources() {
         return resources;
@@ -120,7 +121,10 @@ public final class ClassPath {
 
     /** Returns all top level classes loadable from the current class path. */
     public Set<ClassInfo> getTopLevelClasses() {
-        return resources.stream().flatMap(this::filterClassInfo).filter(this::isTopLevel).collect(Collectors.toSet());
+        return resources.stream()
+                .flatMap(this::filterClassInfo)
+                .filter(this::isTopLevel)
+                .collect(Collectors.toSet());
     }
 
     /** Returns all top level classes whose package name is {@code packageName}. */
@@ -136,8 +140,8 @@ public final class ClassPath {
     }
 
     /**
-     * Returns all top level classes whose package name is {@code packageName} or starts with {@code packageName}
-     * followed by a '.'.
+     * Returns all top level classes whose package name is {@code packageName} or starts with {@code
+     * packageName} followed by a '.'.
      */
     public Set<ClassInfo> getTopLevelClassesRecursive(String packageName) {
         assert packageName != null;
@@ -152,8 +156,8 @@ public final class ClassPath {
     }
 
     /**
-     * Represents a class path resource that can be either a class file or any other resource file loadable from the
-     * class path.
+     * Represents a class path resource that can be either a class file or any other resource file
+     * loadable from the class path.
      *
      * @since 14.0
      */
@@ -182,8 +186,8 @@ public final class ClassPath {
          *
          * <p>See {@link ClassLoader#getResource}
          *
-         * @throws NoSuchElementException if the resource cannot be loaded through the class loader, despite physically
-         *     existing in the class path.
+         * @throws NoSuchElementException if the resource cannot be loaded through the class loader,
+         *     despite physically existing in the class path.
          */
         public final URL url() {
             URL url = loader.getResource(resourceName);
@@ -235,7 +239,8 @@ public final class ClassPath {
         /**
          * Returns the package name of the class, without attempting to load the class.
          *
-         * <p>Behaves identically to {@link Package#getName()} but does not require the class (or package) to be loaded.
+         * <p>Behaves identically to {@link Package#getName()} but does not require the class (or
+         * package) to be loaded.
          */
         public String getPackageName() {
             int lastDot = className.lastIndexOf('.');
@@ -245,16 +250,19 @@ public final class ClassPath {
         /**
          * Returns the simple name of the underlying class as given in the source code.
          *
-         * <p>Behaves identically to {@link Class#getSimpleName()} but does not require the class to be loaded.
+         * <p>Behaves identically to {@link Class#getSimpleName()} but does not require the class to
+         * be loaded.
          */
         public String getSimpleName() {
             int lastDollarSign = className.lastIndexOf('$');
             if (lastDollarSign != -1) {
                 String innerClassName = className.substring(lastDollarSign + 1);
-                // local and anonymous classes are prefixed with number (1,2,3...), anonymous classes are
+                // local and anonymous classes are prefixed with number (1,2,3...), anonymous
+                // classes are
                 // entirely numeric whereas local classes have the user supplied name as a suffix
                 var prefix = 0;
-                while (prefix < innerClassName.length() && Character.isDigit(innerClassName.charAt(prefix))) {
+                while (prefix < innerClassName.length()
+                        && Character.isDigit(innerClassName.charAt(prefix))) {
                     prefix++;
                 }
                 return innerClassName.substring(prefix);
@@ -264,14 +272,16 @@ public final class ClassPath {
                 return className;
             }
 
-            // Since this is a top level class, its simple name is always the part after package name.
+            // Since this is a top level class, its simple name is always the part after package
+            // name.
             return className.substring(packageName.length() + 1);
         }
 
         /**
          * Returns the fully qualified name of the class.
          *
-         * <p>Behaves identically to {@link Class#getName()} but does not require the class to be loaded.
+         * <p>Behaves identically to {@link Class#getName()} but does not require the class to be
+         * loaded.
          */
         public String getName() {
             return className;
@@ -280,8 +290,8 @@ public final class ClassPath {
         /**
          * Loads (but doesn't link or initialize) the class.
          *
-         * @throws LinkageError when there were errors in loading classes that this class depends on. For example,
-         *     {@link NoClassDefFoundError}.
+         * @throws LinkageError when there were errors in loading classes that this class depends
+         *     on. For example, {@link NoClassDefFoundError}.
          */
         public Class<?> load() {
             try {
@@ -299,12 +309,14 @@ public final class ClassPath {
     }
 
     /**
-     * Abstract class that scans through the class path represented by a {@link ClassLoader} and calls {@link
-     * #scanDirectory} and {@link #scanJarFile} for directories and jar files on the class path respectively.
+     * Abstract class that scans through the class path represented by a {@link ClassLoader} and
+     * calls {@link #scanDirectory} and {@link #scanJarFile} for directories and jar files on the
+     * class path respectively.
      */
     abstract static class Scanner {
 
-        // We only scan each file once independent of the classloader that resource might be associated
+        // We only scan each file once independent of the classloader that resource might be
+        // associated
         // with.
         private final Set<File> scannedUris = new HashSet<>();
 
@@ -321,7 +333,8 @@ public final class ClassPath {
         }
 
         /** Called when a directory is scanned for resource files. */
-        protected abstract void scanDirectory(ClassLoader loader, File directory) throws IOException;
+        protected abstract void scanDirectory(ClassLoader loader, File directory)
+                throws IOException;
 
         /** Called when a jar file is scanned for resource entries. */
         protected abstract void scanJarFile(ClassLoader loader, JarFile file) throws IOException;
@@ -365,17 +378,19 @@ public final class ClassPath {
         }
 
         /**
-         * Returns the class path URIs specified by the {@code Class-Path} manifest attribute, according to <a
-         * href="http://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Main_Attributes">JAR File
-         * Specification</a>. If {@code manifest} is null, it means the jar file has no manifest, and an empty set will
-         * be returned.
+         * Returns the class path URIs specified by the {@code Class-Path} manifest attribute,
+         * according to <a
+         * href="http://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Main_Attributes">JAR
+         * File Specification</a>. If {@code manifest} is null, it means the jar file has no
+         * manifest, and an empty set will be returned.
          */
         static Set<File> getClassPathFromManifest(File jarFile, Manifest manifest) {
             if (manifest == null) {
                 return Set.of();
             }
             var builder = new HashSet<File>();
-            String classpathAttribute = manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH.toString());
+            String classpathAttribute =
+                    manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH.toString());
             if (classpathAttribute != null) {
                 for (String path : classpathAttribute.split(" ")) {
                     if (path.isEmpty()) continue;
@@ -424,8 +439,8 @@ public final class ClassPath {
         }
 
         /**
-         * Returns the URLs in the class path specified by the {@code java.class.path} {@linkplain System#getProperty
-         * system property}.
+         * Returns the URLs in the class path specified by the {@code java.class.path} {@linkplain
+         * System#getProperty system property}.
          */
         // TODO(b/65488446): Make this a public API.
         static List<URL> parseJavaClassPath() {
@@ -436,7 +451,9 @@ public final class ClassPath {
                 try {
                     try {
                         urls.add(new File(entry).toURI().toURL());
-                    } catch (SecurityException e) { // File.toURI checks to see if the file is a directory
+                    } catch (
+                            SecurityException
+                                    e) { // File.toURI checks to see if the file is a directory
                         urls.add(new URL("file", null, new File(entry).getAbsolutePath()));
                     }
                 } catch (MalformedURLException e) {
@@ -448,9 +465,9 @@ public final class ClassPath {
 
         /**
          * Returns the absolute uri of the Class-Path entry value as specified in <a
-         * href="http://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Main_Attributes">JAR File
-         * Specification</a>. Even though the specification only talks about relative urls, absolute urls are actually
-         * supported too (for example, in Maven surefire plugin).
+         * href="http://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Main_Attributes">JAR
+         * File Specification</a>. Even though the specification only talks about relative urls,
+         * absolute urls are actually supported too (for example, in Maven surefire plugin).
          */
         static URL getClassPathEntry(File jarFile, String path) throws MalformedURLException {
             return new URL(jarFile.toURI().toURL(), path);
@@ -478,7 +495,9 @@ public final class ClassPath {
                 if (entry.isDirectory() || entry.getName().equals(JarFile.MANIFEST_NAME)) {
                     continue;
                 }
-                resources.computeIfAbsent(classloader, __ -> new LinkedHashSet<>()).add(entry.getName());
+                resources
+                        .computeIfAbsent(classloader, __ -> new LinkedHashSet<>())
+                        .add(entry.getName());
             }
         }
 
@@ -490,17 +509,22 @@ public final class ClassPath {
         }
 
         /**
-         * Recursively scan the given directory, adding resources for each file encountered. Symlinks which have already
-         * been traversed in the current tree path will be skipped to eliminate cycles; otherwise symlinks are
-         * traversed.
+         * Recursively scan the given directory, adding resources for each file encountered.
+         * Symlinks which have already been traversed in the current tree path will be skipped to
+         * eliminate cycles; otherwise symlinks are traversed.
          *
          * @param directory the root of the directory to scan
          * @param classloader the classloader that includes resources found in {@code directory}
-         * @param packagePrefix resource path prefix inside {@code classloader} for any files found under {@code
-         *     directory}
-         * @param currentPath canonical files already visited in the current directory tree path, for cycle elimination
+         * @param packagePrefix resource path prefix inside {@code classloader} for any files found
+         *     under {@code directory}
+         * @param currentPath canonical files already visited in the current directory tree path,
+         *     for cycle elimination
          */
-        private void scanDirectory(File directory, ClassLoader classloader, String packagePrefix, Set<File> currentPath)
+        private void scanDirectory(
+                File directory,
+                ClassLoader classloader,
+                String packagePrefix,
+                Set<File> currentPath)
                 throws IOException {
             File[] files = directory.listFiles();
             if (files == null) {
@@ -519,7 +543,9 @@ public final class ClassPath {
                 } else {
                     String resourceName = packagePrefix + name;
                     if (!resourceName.equals(JarFile.MANIFEST_NAME)) {
-                        resources.computeIfAbsent(classloader, __ -> new LinkedHashSet<>()).add(resourceName);
+                        resources
+                                .computeIfAbsent(classloader, __ -> new LinkedHashSet<>())
+                                .add(resourceName);
                     }
                 }
             }

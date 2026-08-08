@@ -10,28 +10,7 @@ import com.sun.source.tree.SwitchTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Predicate;
-import java.util.logging.Logger;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeVariable;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.CompletionData;
@@ -45,6 +24,30 @@ import org.javacs.lsp.CompletionItem;
 import org.javacs.lsp.CompletionItemKind;
 import org.javacs.lsp.CompletionList;
 import org.javacs.lsp.InsertTextFormat;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeVariable;
 
 public class CompletionProvider {
     private final CompilerProvider compiler;
@@ -149,7 +152,8 @@ public class CompletionProvider {
         var partial = partialIdentifier(contents, (int) cursor);
         var endsWithParen = endsWithParen(contents, (int) cursor);
         try (var task = compiler.compile(List.of(source))) {
-            LOG.info("...compiled in " + Duration.between(started, Instant.now()).toMillis() + "ms");
+            LOG.info(
+                    "...compiled in " + Duration.between(started, Instant.now()).toMillis() + "ms");
             var path = new FindCompletionsAt(task.task).scan(task.root(), cursor);
             switch (path.getLeaf().getKind()) {
                 case IDENTIFIER:
@@ -229,12 +233,15 @@ public class CompletionProvider {
         return c == '.' || Character.isJavaIdentifierPart(c);
     }
 
-    private CompletionList completeIdentifier(CompileTask task, TreePath path, String partial, boolean endsWithParen) {
+    private CompletionList completeIdentifier(
+            CompileTask task, TreePath path, String partial, boolean endsWithParen) {
         LOG.info("...complete identifiers");
         var list = new CompletionList();
         list.items = completeUsingScope(task, path, partial, endsWithParen);
         addStaticImports(task, path.getCompilationUnit(), partial, endsWithParen, list);
-        if (!list.isIncomplete && partial.length() > 0 && Character.isUpperCase(partial.charAt(0))) {
+        if (!list.isIncomplete
+                && partial.length() > 0
+                && Character.isUpperCase(partial.charAt(0))) {
             addClassNames(path.getCompilationUnit(), partial, list);
         }
         addKeywords(path, partial, list);
@@ -292,7 +299,11 @@ public class CompletionProvider {
     }
 
     private void addStaticImports(
-            CompileTask task, CompilationUnitTree root, String partial, boolean endsWithParen, CompletionList list) {
+            CompileTask task,
+            CompilationUnitTree root,
+            String partial,
+            boolean endsWithParen,
+            CompletionList list) {
         var trees = Trees.instance(task.task);
         var methods = new HashMap<String, List<ExecutableElement>>();
         var previousSize = list.items.size();
@@ -325,11 +336,13 @@ public class CompletionProvider {
     }
 
     private boolean importMatchesPartial(Name staticImport, String partial) {
-        return staticImport.contentEquals("*") || StringSearch.matchesPartialName(staticImport, partial);
+        return staticImport.contentEquals("*")
+                || StringSearch.matchesPartialName(staticImport, partial);
     }
 
     private boolean memberMatchesImport(Name staticImport, Element member) {
-        return staticImport.contentEquals("*") || staticImport.contentEquals(member.getSimpleName());
+        return staticImport.contentEquals("*")
+                || staticImport.contentEquals(member.getSimpleName());
     }
 
     private void addClassNames(CompilationUnitTree root, String partial, CompletionList list) {
@@ -366,9 +379,11 @@ public class CompletionProvider {
         if (type instanceof ArrayType) {
             return completeArrayMemberSelect(isStatic);
         } else if (type instanceof TypeVariable) {
-            return completeTypeVariableMemberSelect(task, scope, (TypeVariable) type, isStatic, partial, endsWithParen);
+            return completeTypeVariableMemberSelect(
+                    task, scope, (TypeVariable) type, isStatic, partial, endsWithParen);
         } else if (type instanceof DeclaredType) {
-            return completeDeclaredTypeMemberSelect(task, scope, (DeclaredType) type, isStatic, partial, endsWithParen);
+            return completeDeclaredTypeMemberSelect(
+                    task, scope, (DeclaredType) type, isStatic, partial, endsWithParen);
         } else {
             return NOT_SUPPORTED;
         }
@@ -385,20 +400,40 @@ public class CompletionProvider {
     }
 
     private CompletionList completeTypeVariableMemberSelect(
-            CompileTask task, Scope scope, TypeVariable type, boolean isStatic, String partial, boolean endsWithParen) {
+            CompileTask task,
+            Scope scope,
+            TypeVariable type,
+            boolean isStatic,
+            String partial,
+            boolean endsWithParen) {
         if (type.getUpperBound() instanceof DeclaredType) {
             return completeDeclaredTypeMemberSelect(
-                    task, scope, (DeclaredType) type.getUpperBound(), isStatic, partial, endsWithParen);
+                    task,
+                    scope,
+                    (DeclaredType) type.getUpperBound(),
+                    isStatic,
+                    partial,
+                    endsWithParen);
         } else if (type.getUpperBound() instanceof TypeVariable) {
             return completeTypeVariableMemberSelect(
-                    task, scope, (TypeVariable) type.getUpperBound(), isStatic, partial, endsWithParen);
+                    task,
+                    scope,
+                    (TypeVariable) type.getUpperBound(),
+                    isStatic,
+                    partial,
+                    endsWithParen);
         } else {
             return NOT_SUPPORTED;
         }
     }
 
     private CompletionList completeDeclaredTypeMemberSelect(
-            CompileTask task, Scope scope, DeclaredType type, boolean isStatic, String partial, boolean endsWithParen) {
+            CompileTask task,
+            Scope scope,
+            DeclaredType type,
+            boolean isStatic,
+            String partial,
+            boolean endsWithParen) {
         var trees = Trees.instance(task.task);
         var typeElement = (TypeElement) type.asElement();
         var list = new ArrayList<CompletionItem>();
@@ -447,7 +482,8 @@ public class CompletionProvider {
         return false;
     }
 
-    private CompletionList completeMemberReference(CompileTask task, TreePath path, String partial) {
+    private CompletionList completeMemberReference(
+            CompileTask task, TreePath path, String partial) {
         var trees = Trees.instance(task.task);
         var select = (MemberReferenceTree) path.getLeaf();
         LOG.info("...complete methods of " + select.getQualifierExpression());
@@ -459,9 +495,11 @@ public class CompletionProvider {
         if (type instanceof ArrayType) {
             return completeArrayMemberReference(isStatic);
         } else if (type instanceof TypeVariable) {
-            return completeTypeVariableMemberReference(task, scope, (TypeVariable) type, isStatic, partial);
+            return completeTypeVariableMemberReference(
+                    task, scope, (TypeVariable) type, isStatic, partial);
         } else if (type instanceof DeclaredType) {
-            return completeDeclaredTypeMemberReference(task, scope, (DeclaredType) type, isStatic, partial);
+            return completeDeclaredTypeMemberReference(
+                    task, scope, (DeclaredType) type, isStatic, partial);
         } else {
             return NOT_SUPPORTED;
         }
@@ -610,7 +648,8 @@ public class CompletionProvider {
         return i;
     }
 
-    private CompletionItem method(CompileTask task, List<ExecutableElement> overloads, boolean addParens) {
+    private CompletionItem method(
+            CompileTask task, List<ExecutableElement> overloads, boolean addParens) {
         var first = overloads.get(0);
         var i = new CompletionItem();
         i.label = first.getSimpleName().toString();
@@ -730,7 +769,9 @@ public class CompletionProvider {
 
     private void logCompletionTiming(Instant started, List<?> list, boolean isIncomplete) {
         var elapsedMs = Duration.between(started, Instant.now()).toMillis();
-        if (isIncomplete) LOG.info(String.format("Found %d items (incomplete) in %,d ms", list.size(), elapsedMs));
+        if (isIncomplete)
+            LOG.info(
+                    String.format("Found %d items (incomplete) in %,d ms", list.size(), elapsedMs));
         else LOG.info(String.format("...found %d items in %,d ms", list.size(), elapsedMs));
     }
 

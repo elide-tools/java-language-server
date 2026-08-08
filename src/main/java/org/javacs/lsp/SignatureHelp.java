@@ -8,7 +8,10 @@ public class SignatureHelp {
 
     public SignatureHelp() {}
 
-    public SignatureHelp(List<SignatureInformation> signatures, Integer activeSignature, Integer activeParameter) {
+    public SignatureHelp(
+            List<SignatureInformation> signatures,
+            Integer activeSignature,
+            Integer activeParameter) {
         this.signatures = signatures;
         this.activeSignature = activeSignature;
         this.activeParameter = activeParameter;

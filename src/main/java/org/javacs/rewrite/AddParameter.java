@@ -2,17 +2,20 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.type.TypeMirror;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Promote an extra call argument into a real method parameter: at a call that passes one more
@@ -113,12 +116,17 @@ public class AddParameter implements Rewrite {
         var params = decl.getParameters();
         if (!params.isEmpty()) {
             var at = (int) pos.getEndPosition(root, params.get(params.size() - 1));
-            return new TextEdit[] {new TextEdit(range(lines, at, at), ", " + typeStr + " " + paramName)};
+            return new TextEdit[] {
+                new TextEdit(range(lines, at, at), ", " + typeStr + " " + paramName)
+            };
         }
         // No existing parameters: insert just after the '(' of the parameter list.
         var declStart = (int) pos.getStartPosition(root, decl);
         var body = decl.getBody();
-        var limit = body != null ? (int) pos.getStartPosition(root, body) : (int) pos.getEndPosition(root, decl);
+        var limit =
+                body != null
+                        ? (int) pos.getStartPosition(root, body)
+                        : (int) pos.getEndPosition(root, decl);
         var open = -1;
         for (var i = declStart; i < limit; i++) {
             if (contents.charAt(i) == '(') {
@@ -132,7 +140,10 @@ public class AddParameter implements Rewrite {
     }
 
     private static String paramName(MethodTree decl, ExpressionTree extra, int nArgs) {
-        String candidate = extra instanceof IdentifierTree ? ((IdentifierTree) extra).getName().toString() : null;
+        String candidate =
+                extra instanceof IdentifierTree
+                        ? ((IdentifierTree) extra).getName().toString()
+                        : null;
         if (candidate != null) {
             for (var param : decl.getParameters()) {
                 if (param.getName().contentEquals(candidate)) {
@@ -147,12 +158,14 @@ public class AddParameter implements Rewrite {
     private static String calledName(MethodInvocationTree call) {
         var select = call.getMethodSelect();
         if (select instanceof IdentifierTree) return ((IdentifierTree) select).getName().toString();
-        if (select instanceof MemberSelectTree) return ((MemberSelectTree) select).getIdentifier().toString();
+        if (select instanceof MemberSelectTree)
+            return ((MemberSelectTree) select).getIdentifier().toString();
         return null;
     }
 
     /** The innermost method invocation whose source range contains {@code position}, or null. */
-    private static MethodInvocationTree callAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static MethodInvocationTree callAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new MethodInvocationTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {
@@ -181,7 +194,10 @@ public class AddParameter implements Rewrite {
 
     private static Range range(com.sun.source.tree.LineMap lines, long start, long end) {
         return new Range(
-                new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1),
-                new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
+                new Position(
+                        (int) lines.getLineNumber(start) - 1,
+                        (int) lines.getColumnNumber(start) - 1),
+                new Position(
+                        (int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
     }
 }

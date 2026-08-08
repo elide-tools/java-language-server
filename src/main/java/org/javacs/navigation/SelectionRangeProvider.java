@@ -3,20 +3,23 @@ package org.javacs.navigation;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.tools.Diagnostic;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FindNameAt;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.SelectionRange;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.tools.Diagnostic;
+
 /**
- * `textDocument/selectionRange`: smart expand-selection. Walks the enclosing
- * tree path from the cursor outward, emitting a nested {@link SelectionRange}
- * per ancestor with a real source span. Pure AST — native-image safe.
+ * `textDocument/selectionRange`: smart expand-selection. Walks the enclosing tree path from the
+ * cursor outward, emitting a nested {@link SelectionRange} per ancestor with a real source span.
+ * Pure AST — native-image safe.
  */
 public class SelectionRangeProvider {
     private final CompilerProvider compiler;
@@ -76,6 +79,8 @@ public class SelectionRangeProvider {
         var startColumn = (int) lines.getColumnNumber(start);
         var endLine = (int) lines.getLineNumber(end);
         var endColumn = (int) lines.getColumnNumber(end);
-        return new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+        return new Range(
+                new Position(startLine - 1, startColumn - 1),
+                new Position(endLine - 1, endColumn - 1));
     }
 }

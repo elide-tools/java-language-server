@@ -2,6 +2,7 @@ package org.javacs.debug.proto;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -195,11 +196,14 @@ public class DebugAdapter {
                     switch (msg.type) {
                         case "request":
                         case "event":
-                            // Place requests and events on a queue to be processed by the main thread
+                            // Place requests and events on a queue to be processed by the main
+                            // thread
                             pending.put(json);
                             break;
                         case "response":
-                            // Process responses on the reader thread (which will usually wake up the main thread via a
+                            // Process responses on the reader thread (which will usually wake up
+                            // the main thread
+                            // via a
                             // CompletableFuture)
                             processResponse(json);
                             break;
@@ -225,7 +229,8 @@ public class DebugAdapter {
                         break;
                     }
                 default:
-                    throw new RuntimeException("Don't know what to do with response to command " + cmd);
+                    throw new RuntimeException(
+                            "Don't know what to do with response to command " + cmd);
             }
         }
 
@@ -235,13 +240,19 @@ public class DebugAdapter {
                 pending.put(END_OF_STREAM);
                 return true;
             } catch (Exception e) {
-                LOG.log(Level.SEVERE, "Failed to put kill message onto queue, will try again...", e);
+                LOG.log(
+                        Level.SEVERE,
+                        "Failed to put kill message onto queue, will try again...",
+                        e);
                 return false;
             }
         }
     }
 
-    public DebugAdapter(Function<DebugClient, DebugServer> serverFactory, InputStream receive, OutputStream send) {
+    public DebugAdapter(
+            Function<DebugClient, DebugServer> serverFactory,
+            InputStream receive,
+            OutputStream send) {
         this.receive = receive;
         this.send = send;
         this.client = new RealClient();
@@ -309,7 +320,9 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.initialize(gson.fromJson(json, InitializeRequest.class).arguments);
+                        resp.body =
+                                server.initialize(
+                                        gson.fromJson(json, InitializeRequest.class).arguments);
                         send(resp);
                         break;
                     }
@@ -358,7 +371,9 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.setBreakpoints(gson.fromJson(json, SetBreakpointsRequest.class).arguments);
+                        resp.body =
+                                server.setBreakpoints(
+                                        gson.fromJson(json, SetBreakpointsRequest.class).arguments);
                         send(resp);
                         break;
                     }
@@ -373,14 +388,16 @@ public class DebugAdapter {
                         resp.success = true;
                         resp.body =
                                 server.setFunctionBreakpoints(
-                                        gson.fromJson(json, SetFunctionBreakpointsRequest.class).arguments);
+                                        gson.fromJson(json, SetFunctionBreakpointsRequest.class)
+                                                .arguments);
                         send(resp);
                         break;
                     }
                 case "setExceptionBreakpoints":
                     {
                         server.setExceptionBreakpoints(
-                                gson.fromJson(json, SetExceptionBreakpointsRequest.class).arguments);
+                                gson.fromJson(json, SetExceptionBreakpointsRequest.class)
+                                        .arguments);
                         ack(req);
                         break;
                     }
@@ -428,7 +445,9 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.stackTrace(gson.fromJson(json, StackTraceRequest.class).arguments);
+                        resp.body =
+                                server.stackTrace(
+                                        gson.fromJson(json, StackTraceRequest.class).arguments);
                         send(resp);
                         break;
                     }
@@ -440,7 +459,8 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.scopes(gson.fromJson(json, ScopesRequest.class).arguments);
+                        resp.body =
+                                server.scopes(gson.fromJson(json, ScopesRequest.class).arguments);
                         send(resp);
                         break;
                     }
@@ -452,7 +472,9 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.variables(gson.fromJson(json, VariablesRequest.class).arguments);
+                        resp.body =
+                                server.variables(
+                                        gson.fromJson(json, VariablesRequest.class).arguments);
                         send(resp);
                         break;
                     }
@@ -464,7 +486,9 @@ public class DebugAdapter {
                         resp.request_seq = req.seq;
                         resp.seq = respCounter++;
                         resp.success = true;
-                        resp.body = server.evaluate(gson.fromJson(json, EvaluateRequest.class).arguments);
+                        resp.body =
+                                server.evaluate(
+                                        gson.fromJson(json, EvaluateRequest.class).arguments);
                         send(resp);
                         break;
                     }

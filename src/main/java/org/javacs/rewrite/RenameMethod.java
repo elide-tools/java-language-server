@@ -1,17 +1,19 @@
 package org.javacs.rewrite;
 
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.TextEdit;
+
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.TextEdit;
 
 public class RenameMethod implements Rewrite {
     final String className, methodName;
     final String[] erasedParameterTypes;
     final String newName;
 
-    public RenameMethod(String className, String methodName, String[] erasedParameterTypes, String newName) {
+    public RenameMethod(
+            String className, String methodName, String[] erasedParameterTypes, String newName) {
         this.className = className;
         this.methodName = methodName;
         this.erasedParameterTypes = erasedParameterTypes;
@@ -29,7 +31,9 @@ public class RenameMethod implements Rewrite {
         LOG.info("...check " + paths.length + " files for references");
         try (var compile = compiler.compile(paths)) {
             var helper = new RenameHelper(compile);
-            var edits = helper.renameMethod(compile.roots, className, methodName, erasedParameterTypes, newName);
+            var edits =
+                    helper.renameMethod(
+                            compile.roots, className, methodName, erasedParameterTypes, newName);
             return edits;
         }
     }

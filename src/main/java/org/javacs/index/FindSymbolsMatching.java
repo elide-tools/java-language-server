@@ -2,8 +2,7 @@ package org.javacs.index;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.util.List;
-import java.util.Objects;
+
 import org.javacs.ParseTask;
 import org.javacs.StringSearch;
 import org.javacs.lsp.Location;
@@ -11,6 +10,9 @@ import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.SymbolInformation;
 import org.javacs.lsp.SymbolKind;
+
+import java.util.List;
+import java.util.Objects;
 
 class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>> {
 
@@ -115,7 +117,10 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
         var startColumn = (int) lines.getColumnNumber(start);
         var endLine = (int) lines.getLineNumber(end);
         var endColumn = (int) lines.getColumnNumber(end);
-        var range = new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+        var range =
+                new Range(
+                        new Position(startLine - 1, startColumn - 1),
+                        new Position(endLine - 1, endColumn - 1));
         return new Location(root.getSourceFile().toUri(), range);
     }
 }

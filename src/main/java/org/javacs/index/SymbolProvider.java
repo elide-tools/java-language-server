@@ -1,12 +1,13 @@
 package org.javacs.index;
 
+import org.javacs.CompilerProvider;
+import org.javacs.ParseTask;
+import org.javacs.lsp.SymbolInformation;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import org.javacs.CompilerProvider;
-import org.javacs.ParseTask;
-import org.javacs.lsp.SymbolInformation;
 
 public class SymbolProvider {
 

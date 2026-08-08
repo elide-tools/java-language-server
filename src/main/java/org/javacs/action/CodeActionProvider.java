@@ -4,6 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
+import org.javacs.*;
+import org.javacs.FindTypeDeclarationAt;
+import org.javacs.lsp.*;
+import org.javacs.rewrite.*;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,11 +18,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.*;
-import org.javacs.*;
-import org.javacs.FindTypeDeclarationAt;
-import org.javacs.lsp.*;
-import org.javacs.rewrite.*;
 
 public class CodeActionProvider {
     private final CompilerProvider compiler;
@@ -40,39 +43,59 @@ public class CodeActionProvider {
             var elapsed = Duration.between(started, Instant.now()).toMillis();
             LOG.info(String.format("...compiled in %d ms", elapsed));
             var lines = task.root().getLineMap();
-            var cursor = lines.getPosition(params.range.start.line + 1, params.range.start.character + 1);
+            var cursor =
+                    lines.getPosition(
+                            params.range.start.line + 1, params.range.start.character + 1);
             for (var e : overrideInheritedMethods(task, file, cursor).entrySet()) {
                 actions.add(lazyAction(e.getKey(), CodeActionKind.QuickFix, e.getValue(), null));
             }
             if (wants(params.context.only, CodeActionKind.RefactorExtract)) {
                 var extract = extractVariable(task, file, params.range);
                 if (extract != null) {
-                    actions.add(lazyAction("Extract variable", CodeActionKind.RefactorExtract, extract, null));
+                    actions.add(
+                            lazyAction(
+                                    "Extract variable",
+                                    CodeActionKind.RefactorExtract,
+                                    extract,
+                                    null));
                 }
                 var constant = extractConstant(task, file, params.range);
                 if (constant != null) {
-                    actions.add(lazyAction("Extract constant", CodeActionKind.RefactorExtract, constant, null));
+                    actions.add(
+                            lazyAction(
+                                    "Extract constant",
+                                    CodeActionKind.RefactorExtract,
+                                    constant,
+                                    null));
                 }
                 var extractedMethod = extractMethod(task, file, params.range);
                 if (extractedMethod != null) {
-                    actions.add(lazyAction("Extract method", CodeActionKind.RefactorExtract, extractedMethod, null));
+                    actions.add(
+                            lazyAction(
+                                    "Extract method",
+                                    CodeActionKind.RefactorExtract,
+                                    extractedMethod,
+                                    null));
                 }
             }
-            if (wants(params.context.only, CodeActionKind.RefactorInline) && InlineVariable.canInline(task, (int) cursor)) {
+            if (wants(params.context.only, CodeActionKind.RefactorInline)
+                    && InlineVariable.canInline(task, (int) cursor)) {
                 var d = new JsonObject();
                 d.addProperty("type", "InlineVariable");
                 d.addProperty("file", file.toString());
                 d.addProperty("position", (int) cursor);
                 actions.add(lazyAction("Inline variable", CodeActionKind.RefactorInline, d, null));
             }
-            if (wants(params.context.only, CodeActionKind.RefactorInline) && InlineMethod.canInline(task, (int) cursor)) {
+            if (wants(params.context.only, CodeActionKind.RefactorInline)
+                    && InlineMethod.canInline(task, (int) cursor)) {
                 var d = new JsonObject();
                 d.addProperty("type", "InlineMethod");
                 d.addProperty("file", file.toString());
                 d.addProperty("position", (int) cursor);
                 actions.add(lazyAction("Inline method", CodeActionKind.RefactorInline, d, null));
             }
-            if (wants(params.context.only, CodeActionKind.RefactorInline) && InlineField.canInline(task, (int) cursor)) {
+            if (wants(params.context.only, CodeActionKind.RefactorInline)
+                    && InlineField.canInline(task, (int) cursor)) {
                 var d = new JsonObject();
                 d.addProperty("type", "InlineField");
                 d.addProperty("file", file.toString());
@@ -89,7 +112,12 @@ public class CodeActionProvider {
                         d.addProperty("file", file.toString());
                         d.addProperty("position", (int) cursor);
                         d.addProperty("access", level[0]);
-                        actions.add(lazyAction("Make method " + level[1], CodeActionKind.RefactorRewrite, d, null));
+                        actions.add(
+                                lazyAction(
+                                        "Make method " + level[1],
+                                        CodeActionKind.RefactorRewrite,
+                                        d,
+                                        null));
                     }
                 }
                 if (ReplaceConstructorWithFactoryMethod.canReplace(task, (int) cursor)) {
@@ -109,14 +137,24 @@ public class CodeActionProvider {
                     d.addProperty("type", "AddParameter");
                     d.addProperty("file", file.toString());
                     d.addProperty("position", (int) cursor);
-                    actions.add(lazyAction("Add parameter to method", CodeActionKind.RefactorRewrite, d, null));
+                    actions.add(
+                            lazyAction(
+                                    "Add parameter to method",
+                                    CodeActionKind.RefactorRewrite,
+                                    d,
+                                    null));
                 }
                 if (RemoveParameter.canRemove(task, (int) cursor)) {
                     var d = new JsonObject();
                     d.addProperty("type", "RemoveParameter");
                     d.addProperty("file", file.toString());
                     d.addProperty("position", (int) cursor);
-                    actions.add(lazyAction("Remove unused parameter", CodeActionKind.RefactorRewrite, d, null));
+                    actions.add(
+                            lazyAction(
+                                    "Remove unused parameter",
+                                    CodeActionKind.RefactorRewrite,
+                                    d,
+                                    null));
                 }
             }
         }
@@ -203,7 +241,8 @@ public class CodeActionProvider {
         return null;
     }
 
-    private Map<String, JsonObject> overrideInheritedMethods(CompileTask task, Path file, long cursor) {
+    private Map<String, JsonObject> overrideInheritedMethods(
+            CompileTask task, Path file, long cursor) {
         if (!isBlankLine(task.root(), cursor)) return Map.of();
         if (isInMethod(task, cursor)) return Map.of();
         var methodTree = new FindMethodDeclarationAt(task.task).scan(task.root(), cursor);
@@ -256,7 +295,10 @@ public class CodeActionProvider {
     }
 
     public List<CodeAction> codeActionForDiagnostics(CodeActionParams params) {
-        LOG.info(String.format("Check %d diagnostics for quick fixes...", params.context.diagnostics.size()));
+        LOG.info(
+                String.format(
+                        "Check %d diagnostics for quick fixes...",
+                        params.context.diagnostics.size()));
         var started = Instant.now();
         var file = Paths.get(params.textDocument.uri);
         try (var task = compiler.compile(file)) {
@@ -276,7 +318,8 @@ public class CodeActionProvider {
         // only be known by running it, so we must not offer an unresolvable fix.
         switch (d.code) {
             case "unused_local":
-                var toStatement = new ConvertVariableToStatement(file, findPosition(task, d.range.start));
+                var toStatement =
+                        new ConvertVariableToStatement(file, findPosition(task, d.range.start));
                 return createQuickFix("Convert to statement", toStatement);
             case "unused_field":
                 var toBlock = new ConvertFieldToBlock(file, findPosition(task, d.range.start));
@@ -288,7 +331,9 @@ public class CodeActionProvider {
                 var unusedMethod = findMethod(task, d.range);
                 var removeMethod =
                         new RemoveMethod(
-                                unusedMethod.className, unusedMethod.methodName, unusedMethod.erasedParameterTypes);
+                                unusedMethod.className,
+                                unusedMethod.methodName,
+                                unusedMethod.erasedParameterTypes);
                 return createQuickFix("Remove method", removeMethod);
             case "unused_throws":
                 var shortExceptionName = extractRange(task, d.range);
@@ -305,7 +350,9 @@ public class CodeActionProvider {
                 var warnedMethod = findMethod(task, d.range);
                 var suppressWarning =
                         new AddSuppressWarningAnnotation(
-                                warnedMethod.className, warnedMethod.methodName, warnedMethod.erasedParameterTypes);
+                                warnedMethod.className,
+                                warnedMethod.methodName,
+                                warnedMethod.erasedParameterTypes);
                 return createQuickFix("Suppress 'unchecked' warning", suppressWarning);
             case "compiler.err.unreported.exception.need.to.catch.or.throw":
                 var needsThrow = findMethod(task, d.range);
@@ -316,9 +363,12 @@ public class CodeActionProvider {
                                 needsThrow.methodName,
                                 needsThrow.erasedParameterTypes,
                                 exceptionName);
-                var actionsForException = new ArrayList<CodeAction>(createQuickFix("Add 'throws'", addThrows));
-                var surroundWithCatch = new CatchException(file, findPosition(task, d.range.start), exceptionName);
-                actionsForException.addAll(createQuickFix("Surround with try/catch", surroundWithCatch));
+                var actionsForException =
+                        new ArrayList<CodeAction>(createQuickFix("Add 'throws'", addThrows));
+                var surroundWithCatch =
+                        new CatchException(file, findPosition(task, d.range.start), exceptionName);
+                actionsForException.addAll(
+                        createQuickFix("Surround with try/catch", surroundWithCatch));
                 return actionsForException;
             case "compiler.err.cant.resolve":
             case "compiler.err.cant.resolve.location":
@@ -331,7 +381,8 @@ public class CodeActionProvider {
                         allImports.addAll(createQuickFix(title, addImport));
                     }
                 }
-                var fieldName = simpleName.toString().substring(simpleName.toString().lastIndexOf('.') + 1);
+                var fieldName =
+                        simpleName.toString().substring(simpleName.toString().lastIndexOf('.') + 1);
                 var createField = new CreateMissingField(file, findPosition(task, d.range.start));
                 allImports.addAll(createQuickFix("Create field '" + fieldName + "'", createField));
                 return allImports;
@@ -345,7 +396,8 @@ public class CodeActionProvider {
                 var implementAbstracts = new ImplementAbstractMethods(missingAbstracts);
                 return createQuickFix("Implement abstract methods", implementAbstracts);
             case "compiler.err.cant.resolve.location.args":
-                var missingMethod = new CreateMissingMethod(file, findPosition(task, d.range.start));
+                var missingMethod =
+                        new CreateMissingMethod(file, findPosition(task, d.range.start));
                 return createQuickFix("Create missing method", missingMethod);
             default:
                 return List.of();
@@ -370,7 +422,10 @@ public class CodeActionProvider {
     }
 
     private ClassTree findClassTree(CompileTask task, Range range) {
-        var position = task.root().getLineMap().getPosition(range.start.line + 1, range.start.character + 1);
+        var position =
+                task.root()
+                        .getLineMap()
+                        .getPosition(range.start.line + 1, range.start.character + 1);
         return new FindTypeDeclarationAt(task.task).scan(task.root(), position);
     }
 
@@ -398,12 +453,16 @@ public class CodeActionProvider {
     }
 
     private boolean synthentic(CompileTask task, MethodTree method) {
-        return Trees.instance(task.task).getSourcePositions().getStartPosition(task.root(), method) != -1;
+        return Trees.instance(task.task).getSourcePositions().getStartPosition(task.root(), method)
+                != -1;
     }
 
     private MethodPtr findMethod(CompileTask task, Range range) {
         var trees = Trees.instance(task.task);
-        var position = task.root().getLineMap().getPosition(range.start.line + 1, range.start.character + 1);
+        var position =
+                task.root()
+                        .getLineMap()
+                        .getPosition(range.start.line + 1, range.start.character + 1);
         var tree = new FindMethodDeclarationAt(task.task).scan(task.root(), position);
         var path = trees.getPath(task.root(), tree);
         var method = (ExecutableElement) trees.getElement(path);
@@ -429,7 +488,8 @@ public class CodeActionProvider {
         }
     }
 
-    private static final Pattern NOT_THROWN_EXCEPTION = Pattern.compile("^'((\\w+\\.)*\\w+)' is not thrown");
+    private static final Pattern NOT_THROWN_EXCEPTION =
+            Pattern.compile("^'((\\w+\\.)*\\w+)' is not thrown");
 
     private String extractNotThrownExceptionName(String message) {
         var matcher = NOT_THROWN_EXCEPTION.matcher(message);
@@ -440,7 +500,8 @@ public class CodeActionProvider {
         return matcher.group(1);
     }
 
-    private static final Pattern UNREPORTED_EXCEPTION = Pattern.compile("unreported exception ((\\w+\\.)*\\w+)");
+    private static final Pattern UNREPORTED_EXCEPTION =
+            Pattern.compile("unreported exception ((\\w+\\.)*\\w+)");
 
     private String extractExceptionName(String message) {
         var matcher = UNREPORTED_EXCEPTION.matcher(message);
@@ -458,8 +519,16 @@ public class CodeActionProvider {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        var start = (int) task.root().getLineMap().getPosition(range.start.line + 1, range.start.character + 1);
-        var end = (int) task.root().getLineMap().getPosition(range.end.line + 1, range.end.character + 1);
+        var start =
+                (int)
+                        task.root()
+                                .getLineMap()
+                                .getPosition(range.start.line + 1, range.start.character + 1);
+        var end =
+                (int)
+                        task.root()
+                                .getLineMap()
+                                .getPosition(range.end.line + 1, range.end.character + 1);
         return contents.subSequence(start, end);
     }
 
@@ -480,7 +549,8 @@ public class CodeActionProvider {
 
     // ---- lazy action + resolve descriptor plumbing (cursor + source actions) ----
 
-    private CodeAction lazyAction(String title, String kind, JsonObject data, List<Diagnostic> diagnostics) {
+    private CodeAction lazyAction(
+            String title, String kind, JsonObject data, List<Diagnostic> diagnostics) {
         var a = new CodeAction();
         a.title = title;
         a.kind = kind;
@@ -514,8 +584,8 @@ public class CodeActionProvider {
     }
 
     /**
-     * Descriptor for extracting the expression exactly spanning the selection into a local variable,
-     * or null when the selection is not a value-producing expression inside a block.
+     * Descriptor for extracting the expression exactly spanning the selection into a local
+     * variable, or null when the selection is not a value-producing expression inside a block.
      */
     private JsonObject extractVariable(CompileTask task, Path file, Range range) {
         if (range.start.line == range.end.line && range.start.character == range.end.character) {
@@ -594,7 +664,8 @@ public class CodeActionProvider {
         return d;
     }
 
-    private static ExpressionTree findExpression(CompilationUnitTree root, SourcePositions pos, int start, int end) {
+    private static ExpressionTree findExpression(
+            CompilationUnitTree root, SourcePositions pos, int start, int end) {
         var result = new ExpressionTree[1];
         new TreeScanner<Void, Void>() {
             @Override
@@ -614,7 +685,8 @@ public class CodeActionProvider {
 
     private static boolean inBlock(TreePath path) {
         for (var p = path; p != null && p.getParentPath() != null; p = p.getParentPath()) {
-            if (p.getLeaf() instanceof StatementTree && p.getParentPath().getLeaf() instanceof BlockTree) {
+            if (p.getLeaf() instanceof StatementTree
+                    && p.getParentPath().getLeaf() instanceof BlockTree) {
                 return true;
             }
         }
@@ -633,11 +705,14 @@ public class CodeActionProvider {
             case "GenerateGettersAndSetters":
                 return new GenerateGettersAndSetters(dataPath(d), d.get("name").getAsString());
             case "ExtractVariable":
-                return new ExtractVariable(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
+                return new ExtractVariable(
+                        dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "ExtractConstant":
-                return new ExtractConstant(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
+                return new ExtractConstant(
+                        dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "ExtractMethod":
-                return new ExtractMethod(dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
+                return new ExtractMethod(
+                        dataPath(d), d.get("start").getAsInt(), d.get("end").getAsInt());
             case "InlineVariable":
                 return new InlineVariable(dataPath(d), d.get("position").getAsInt());
             case "InlineMethod":
@@ -645,9 +720,11 @@ public class CodeActionProvider {
             case "InlineField":
                 return new InlineField(dataPath(d), d.get("position").getAsInt());
             case "ChangeMethodAccess":
-                return new ChangeMethodAccess(dataPath(d), d.get("position").getAsInt(), d.get("access").getAsString());
+                return new ChangeMethodAccess(
+                        dataPath(d), d.get("position").getAsInt(), d.get("access").getAsString());
             case "ReplaceConstructorWithFactoryMethod":
-                return new ReplaceConstructorWithFactoryMethod(dataPath(d), d.get("position").getAsInt());
+                return new ReplaceConstructorWithFactoryMethod(
+                        dataPath(d), d.get("position").getAsInt());
             case "AddParameter":
                 return new AddParameter(dataPath(d), d.get("position").getAsInt());
             case "RemoveParameter":

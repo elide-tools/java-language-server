@@ -4,20 +4,23 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.Location;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
+
 /**
- * `textDocument/typeDefinition`: from a variable/expression, jump to the
- * declaration of its *type*. Pure javac element analysis — native-image safe.
+ * `textDocument/typeDefinition`: from a variable/expression, jump to the declaration of its *type*.
+ * Pure javac element analysis — native-image safe.
  */
 public class TypeDefinitionProvider {
     private final CompilerProvider compiler;
@@ -58,12 +61,10 @@ public class TypeDefinitionProvider {
     }
 
     /**
-     * Resolve the class declaration via {@link CompilerProvider#findAnywhere}
-     * (source path, doc path, then the type index — the same lookup goto
-     * definition relies on, and which handles the unnamed/default package) then
-     * locate the class by walking the compiled trees rather than
-     * {@code Elements.getTypeElement}, which returns null for unnamed-package
-     * types.
+     * Resolve the class declaration via {@link CompilerProvider#findAnywhere} (source path, doc
+     * path, then the type index — the same lookup goto definition relies on, and which handles the
+     * unnamed/default package) then locate the class by walking the compiled trees rather than
+     * {@code Elements.getTypeElement}, which returns null for unnamed-package types.
      */
     private List<Location> findTypeDeclaration(String qualifiedName) {
         var otherFile = compiler.findAnywhere(qualifiedName);

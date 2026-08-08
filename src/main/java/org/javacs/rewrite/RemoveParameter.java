@@ -2,15 +2,18 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
 
 /**
  * Remove the unused parameter the cursor is on from a private method, dropping the corresponding
@@ -39,7 +42,9 @@ public class RemoveParameter implements Rewrite {
         }
     }
 
-    /** Whether the unused parameter at {@code position} can be removed (used for lazy detection). */
+    /**
+     * Whether the unused parameter at {@code position} can be removed (used for lazy detection).
+     */
     public static boolean canRemove(CompileTask task, int position) {
         return plan(task, position) != null;
     }
@@ -105,7 +110,8 @@ public class RemoveParameter implements Rewrite {
         new TreePathScanner<Void, Void>() {
             @Override
             public Void visitMethodInvocation(MethodInvocationTree t, Void p) {
-                if (methodEl.equals(trees.getElement(getCurrentPath())) && t.getArguments().size() == params.size()) {
+                if (methodEl.equals(trees.getElement(getCurrentPath()))
+                        && t.getArguments().size() == params.size()) {
                     edits.add(removal(lines, pos, root, t.getArguments(), fi));
                 }
                 return super.visitMethodInvocation(t, p);
@@ -115,7 +121,10 @@ public class RemoveParameter implements Rewrite {
         return edits.toArray(new TextEdit[0]);
     }
 
-    /** A deletion of item {@code index} from a comma-separated list, taking an adjacent comma with it. */
+    /**
+     * A deletion of item {@code index} from a comma-separated list, taking an adjacent comma with
+     * it.
+     */
     private static TextEdit removal(
             com.sun.source.tree.LineMap lines,
             SourcePositions pos,
@@ -136,13 +145,18 @@ public class RemoveParameter implements Rewrite {
         }
         return new TextEdit(
                 new Range(
-                        new Position((int) lines.getLineNumber(delStart) - 1, (int) lines.getColumnNumber(delStart) - 1),
-                        new Position((int) lines.getLineNumber(delEnd) - 1, (int) lines.getColumnNumber(delEnd) - 1)),
+                        new Position(
+                                (int) lines.getLineNumber(delStart) - 1,
+                                (int) lines.getColumnNumber(delStart) - 1),
+                        new Position(
+                                (int) lines.getLineNumber(delEnd) - 1,
+                                (int) lines.getColumnNumber(delEnd) - 1)),
                 "");
     }
 
     /** The innermost method that declares a parameter whose span contains {@code position}. */
-    private static MethodTree methodWithParamAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static MethodTree methodWithParamAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new MethodTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {

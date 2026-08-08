@@ -5,16 +5,12 @@ import static org.javacs.JsonHelper.GSON;
 import com.google.gson.*;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.logging.Logger;
-import javax.lang.model.element.*;
+
 import org.javacs.action.CodeActionProvider;
 import org.javacs.completion.CompletionProvider;
 import org.javacs.completion.SignatureProvider;
+import org.javacs.embed.ClasspathProvider;
+import org.javacs.embed.JavaFormatter;
 import org.javacs.fold.FoldProvider;
 import org.javacs.hover.HoverProvider;
 import org.javacs.index.SymbolProvider;
@@ -22,19 +18,26 @@ import org.javacs.lens.CodeLensProvider;
 import org.javacs.lsp.*;
 import org.javacs.markup.ColorProvider;
 import org.javacs.markup.ErrorProvider;
-import org.javacs.navigation.DefinitionProvider;
-import org.javacs.navigation.ReferenceProvider;
-import org.javacs.navigation.ImplementationProvider;
-import org.javacs.navigation.TypeDefinitionProvider;
-import org.javacs.navigation.DocumentHighlightProvider;
-import org.javacs.navigation.SelectionRangeProvider;
 import org.javacs.markup.SemanticTokensProvider;
-import org.javacs.navigation.InlayHintProvider;
 import org.javacs.navigation.CallHierarchyProvider;
+import org.javacs.navigation.DefinitionProvider;
+import org.javacs.navigation.DocumentHighlightProvider;
+import org.javacs.navigation.ImplementationProvider;
+import org.javacs.navigation.InlayHintProvider;
+import org.javacs.navigation.ReferenceProvider;
+import org.javacs.navigation.SelectionRangeProvider;
+import org.javacs.navigation.TypeDefinitionProvider;
 import org.javacs.navigation.TypeHierarchyProvider;
 import org.javacs.rewrite.*;
-import org.javacs.embed.ClasspathProvider;
-import org.javacs.embed.JavaFormatter;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.logging.Logger;
+
+import javax.lang.model.element.*;
 
 public class JavaLanguageServer extends LanguageServer {
     // TODO allow multiple workspace roots
@@ -130,7 +133,9 @@ public class JavaLanguageServer extends LanguageServer {
     }
 
     private JavaCompilerService createCompiler() {
-        Objects.requireNonNull(workspaceRoot, "Can't create compiler because workspaceRoot has not been initialized");
+        Objects.requireNonNull(
+                workspaceRoot,
+                "Can't create compiler because workspaceRoot has not been initialized");
 
         javaStartProgress(new JavaStartProgressParams("Configure javac"));
         javaReportProgress(new JavaReportProgressParams("Finding source roots"));
@@ -317,7 +322,8 @@ public class JavaLanguageServer extends LanguageServer {
         this(client, null, null);
     }
 
-    public JavaLanguageServer(LanguageClient client, ClasspathProvider classpathProvider, JavaFormatter formatter) {
+    public JavaLanguageServer(
+            LanguageClient client, ClasspathProvider classpathProvider, JavaFormatter formatter) {
         this.client = client;
         this.classpathProvider = classpathProvider;
         this.formatter = formatter;
@@ -529,13 +535,15 @@ public class JavaLanguageServer extends LanguageServer {
     }
 
     @Override
-    public List<CallHierarchyIncomingCall> callHierarchyIncoming(CallHierarchyIncomingCallsParams params) {
+    public List<CallHierarchyIncomingCall> callHierarchyIncoming(
+            CallHierarchyIncomingCallsParams params) {
         if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
         return new CallHierarchyProvider(compiler()).incoming(params.item);
     }
 
     @Override
-    public List<CallHierarchyOutgoingCall> callHierarchyOutgoing(CallHierarchyOutgoingCallsParams params) {
+    public List<CallHierarchyOutgoingCall> callHierarchyOutgoing(
+            CallHierarchyOutgoingCallsParams params) {
         if (params.item == null || !FileStore.isJavaFile(params.item.uri)) return List.of();
         return new CallHierarchyProvider(compiler()).outgoing(params.item);
     }
@@ -694,7 +702,8 @@ public class JavaLanguageServer extends LanguageServer {
         var file = Paths.get(params.textDocument.uri);
         try (var task = compiler().compile(file)) {
             var lines = task.root().getLineMap();
-            var position = lines.getPosition(params.position.line + 1, params.position.character + 1);
+            var position =
+                    lines.getPosition(params.position.line + 1, params.position.character + 1);
             var path = new FindNameAt(task).scan(task.root(), position);
             if (path == null) return Rewrite.NOT_SUPPORTED;
             var el = Trees.instance(task.task).getElement(path);
@@ -738,11 +747,14 @@ public class JavaLanguageServer extends LanguageServer {
         return new RenameField(className, fieldName, newName);
     }
 
-    private RenameVariable renameVariable(CompileTask task, VariableElement variable, String newName) {
+    private RenameVariable renameVariable(
+            CompileTask task, VariableElement variable, String newName) {
         var trees = Trees.instance(task.task);
         var path = trees.getPath(variable);
         var file = Paths.get(path.getCompilationUnit().getSourceFile().toUri());
-        var position = trees.getSourcePositions().getStartPosition(path.getCompilationUnit(), path.getLeaf());
+        var position =
+                trees.getSourcePositions()
+                        .getStartPosition(path.getCompilationUnit(), path.getLeaf());
         return new RenameVariable(file, (int) position, newName);
     }
 
@@ -756,7 +768,9 @@ public class JavaLanguageServer extends LanguageServer {
         FileStore.externalDelete(file);
         var compiler = compiler();
         var referencePaths =
-                Arrays.stream(compiler.findTypeReferences(className)).filter(ref -> !ref.equals(file)).toList();
+                Arrays.stream(compiler.findTypeReferences(className))
+                        .filter(ref -> !ref.equals(file))
+                        .toList();
         if (referencePaths.isEmpty()) {
             return;
         }
@@ -793,7 +807,8 @@ public class JavaLanguageServer extends LanguageServer {
 
         if (FileStore.isJavaFile(params.textDocument.uri)) {
             // Clear diagnostics
-            client.publishDiagnostics(new PublishDiagnosticsParams(params.textDocument.uri, List.of()));
+            client.publishDiagnostics(
+                    new PublishDiagnosticsParams(params.textDocument.uri, List.of()));
         }
     }
 

@@ -2,26 +2,28 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.type.TypeMirror;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
+
 /**
  * Extract the expression selected by [start, end) into a {@code private static final} field of the
  * enclosing class and replace the selection with the field name.
  *
  * <p>Only performed when the expression is legal in a static initializer: it references no local
- * variables, parameters, {@code this}/{@code super}, or non-static members. Under that condition the
- * expression denotes the same value in a static field initializer as at its original site, so the
- * extraction preserves behavior. Otherwise the rewrite is CANCELLED.
+ * variables, parameters, {@code this}/{@code super}, or non-static members. Under that condition
+ * the expression denotes the same value in a static field initializer as at its original site, so
+ * the extraction preserves behavior. Otherwise the rewrite is CANCELLED.
  */
 public class ExtractConstant implements Rewrite {
     final Path file;
@@ -42,7 +44,9 @@ public class ExtractConstant implements Rewrite {
         }
     }
 
-    /** Whether extracting the selection into a constant is safe (used for lazy action detection). */
+    /**
+     * Whether extracting the selection into a constant is safe (used for lazy action detection).
+     */
     public static boolean canExtract(CompileTask task, int start, int end) {
         return plan(task, start, end) != null;
     }
@@ -92,17 +96,30 @@ public class ExtractConstant implements Rewrite {
         var memberColumn = (int) lines.getColumnNumber(memberStart);
         var indent = " ".repeat(memberColumn - 1);
         var declaration =
-                "private static final " + typeString(type) + " " + NAME + " = " + exprText + ";\n" + indent;
+                "private static final "
+                        + typeString(type)
+                        + " "
+                        + NAME
+                        + " = "
+                        + exprText
+                        + ";\n"
+                        + indent;
         var insertPos = new Position(memberLine - 1, memberColumn - 1);
         var insert = new TextEdit(new Range(insertPos, insertPos), declaration);
-        var startPos = new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1);
-        var endPos = new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1);
+        var startPos =
+                new Position(
+                        (int) lines.getLineNumber(start) - 1,
+                        (int) lines.getColumnNumber(start) - 1);
+        var endPos =
+                new Position(
+                        (int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1);
         var replace = new TextEdit(new Range(startPos, endPos), NAME);
         return new TextEdit[] {insert, replace};
     }
 
     /** The expression whose source range is exactly the selection, or null. */
-    private static ExpressionTree findExpression(CompilationUnitTree root, SourcePositions pos, int start, int end) {
+    private static ExpressionTree findExpression(
+            CompilationUnitTree root, SourcePositions pos, int start, int end) {
         var result = new ExpressionTree[1];
         new TreeScanner<Void, Void>() {
             @Override
@@ -129,7 +146,8 @@ public class ExtractConstant implements Rewrite {
     }
 
     /** The first non-synthetic member of the class (a valid field-insertion anchor), or null. */
-    private static Tree firstRealMember(CompilationUnitTree root, SourcePositions pos, ClassTree cls) {
+    private static Tree firstRealMember(
+            CompilationUnitTree root, SourcePositions pos, ClassTree cls) {
         for (var member : cls.getMembers()) {
             if (pos.getStartPosition(root, member) >= 0) return member;
         }
@@ -140,7 +158,8 @@ public class ExtractConstant implements Rewrite {
      * Whether every name referenced inside the selection is legal in a static initializer: no local
      * variables, parameters, {@code this}/{@code super}, or non-static fields/methods.
      */
-    private static boolean isStaticSafe(Trees trees, CompilationUnitTree root, TreePath exprPath, int start, int end) {
+    private static boolean isStaticSafe(
+            Trees trees, CompilationUnitTree root, TreePath exprPath, int start, int end) {
         var pos = trees.getSourcePositions();
         var safe = new boolean[] {true};
         new TreePathScanner<Void, Void>() {

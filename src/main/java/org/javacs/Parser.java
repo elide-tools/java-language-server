@@ -3,24 +3,34 @@ package org.javacs;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
+import org.javacs.lsp.*;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.*;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
-import org.javacs.lsp.*;
 
 class Parser {
-    private static final JavaCompiler COMPILER = ServiceLoader.load(JavaCompiler.class).iterator().next();
+    private static final JavaCompiler COMPILER =
+            ServiceLoader.load(JavaCompiler.class).iterator().next();
     private static final SourceFileManager FILE_MANAGER = new SourceFileManager();
 
     /** Create a task that compiles a single file */
     private static JavacTask singleFileTask(JavaFileObject file) {
         return (JavacTask)
-                COMPILER.getTask(null, FILE_MANAGER, Parser::ignoreError, List.of(), List.of(), List.of(file));
+                COMPILER.getTask(
+                        null,
+                        FILE_MANAGER,
+                        Parser::ignoreError,
+                        List.of(),
+                        List.of(),
+                        List.of(file));
     }
 
     final JavaFileObject file;
@@ -117,7 +127,9 @@ class Parser {
             var name = cls.getSimpleName().toString();
             start = indexOf(contents, name, start);
             if (start == -1) {
-                LOG.warning(String.format("Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
+                LOG.warning(
+                        String.format(
+                                "Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
                 return Range.NONE;
             }
             end = start + name.length();
@@ -136,7 +148,9 @@ class Parser {
             }
             start = indexOf(contents, name, start);
             if (start == -1) {
-                LOG.warning(String.format("Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
+                LOG.warning(
+                        String.format(
+                                "Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
                 return Range.NONE;
             }
             end = start + name.length();
@@ -152,7 +166,9 @@ class Parser {
             var name = field.getName().toString();
             start = indexOf(contents, name, start);
             if (start == -1) {
-                LOG.warning(String.format("Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
+                LOG.warning(
+                        String.format(
+                                "Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
                 return Range.NONE;
             }
             end = start + name.length();
@@ -162,7 +178,9 @@ class Parser {
             var name = member.getIdentifier().toString();
             start = indexOf(contents, name, start);
             if (start == -1) {
-                LOG.warning(String.format("Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
+                LOG.warning(
+                        String.format(
+                                "Couldn't find identifier `%s` in `%s`", name, path.getLeaf()));
                 return Range.NONE;
             }
             end = start + name.length();
@@ -171,7 +189,10 @@ class Parser {
         var startCol = (int) lines.getColumnNumber(start);
         var endLine = (int) lines.getLineNumber(end);
         var endCol = (int) lines.getColumnNumber(end);
-        var range = new Range(new Position(startLine - 1, startCol - 1), new Position(endLine - 1, endCol - 1));
+        var range =
+                new Range(
+                        new Position(startLine - 1, startCol - 1),
+                        new Position(endLine - 1, endCol - 1));
 
         return range;
     }
@@ -187,7 +208,9 @@ class Parser {
     private static final DocCommentTree EMPTY_DOC = makeEmptyDoc();
 
     private static DocCommentTree makeEmptyDoc() {
-        var file = new SourceFileObject(Paths.get("/Foo.java"), "/** */ class Foo { }", SourceFileObject.now());
+        var file =
+                new SourceFileObject(
+                        Paths.get("/Foo.java"), "/** */ class Foo { }", SourceFileObject.now());
         var task =
                 (JavacTask)
                         COMPILER.getTask(
@@ -303,7 +326,8 @@ class Parser {
                 if (last == -1) {
                     throw new RuntimeException(
                             String.format(
-                                    "No cursor in %s is between %d and %d", Arrays.toString(offsets), start, end));
+                                    "No cursor in %s is between %d and %d",
+                                    Arrays.toString(offsets), start, end));
                 }
                 return last;
             }

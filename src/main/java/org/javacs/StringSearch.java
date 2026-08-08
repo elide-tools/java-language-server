@@ -4,12 +4,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.TypeElement;
 
 // Translated from https://golang.org/src/strings/search.go
@@ -267,9 +268,9 @@ public class StringSearch {
     }
 
     /**
-     * Check if `candidate` contains all the characters of `find`, in-order, case-insensitive. Matches can be
-     * discontinuous if the letters of `find` match the first letters of words in `candidate` For example, fb matches
-     * FooBar, but it doesn't match Foobar (exposed for testing)
+     * Check if `candidate` contains all the characters of `find`, in-order, case-insensitive.
+     * Matches can be discontinuous if the letters of `find` match the first letters of words in
+     * `candidate` For example, fb matches FooBar, but it doesn't match Foobar (exposed for testing)
      */
     public static boolean matchesTitleCase(CharSequence candidate, String find) {
         Objects.requireNonNull(candidate, "candidate is null");
@@ -283,7 +284,8 @@ public class StringSearch {
                 // If we have reached the end of candidate without matching all of find, fail
                 if (i >= candidate.length()) return false;
                 // If the next character in candidate matches, advance i
-                else if (Character.toLowerCase(f) == Character.toLowerCase(candidate.charAt(i))) i++;
+                else if (Character.toLowerCase(f) == Character.toLowerCase(candidate.charAt(i)))
+                    i++;
                 else {
                     // Find the start of the next word
                     while (i < candidate.length()) {
@@ -345,7 +347,8 @@ public class StringSearch {
 
     private static boolean containsInterface(Path file, String simpleName) {
         if (cacheContainsInterface.needs(file, simpleName)) {
-            cacheContainsInterface.load(file, simpleName, containsString(file, "interface " + simpleName));
+            cacheContainsInterface.load(
+                    file, simpleName, containsString(file, "interface " + simpleName));
             // TODO verify this by actually parsing the file
         }
         return cacheContainsInterface.get(file, simpleName);

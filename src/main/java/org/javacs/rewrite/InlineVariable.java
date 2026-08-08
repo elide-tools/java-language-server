@@ -2,19 +2,22 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Map;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Map;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 
 /**
  * Inline a local variable: replace every reference with the initializer and delete the declaration.
@@ -170,8 +173,12 @@ public class InlineVariable implements Rewrite {
             var e = pos.getEndPosition(root, ref);
             var range =
                     new Range(
-                            new Position((int) lines.getLineNumber(s) - 1, (int) lines.getColumnNumber(s) - 1),
-                            new Position((int) lines.getLineNumber(e) - 1, (int) lines.getColumnNumber(e) - 1));
+                            new Position(
+                                    (int) lines.getLineNumber(s) - 1,
+                                    (int) lines.getColumnNumber(s) - 1),
+                            new Position(
+                                    (int) lines.getLineNumber(e) - 1,
+                                    (int) lines.getColumnNumber(e) - 1));
             edits.add(new TextEdit(range, replacement));
         }
         // delete the declaration line(s) entirely

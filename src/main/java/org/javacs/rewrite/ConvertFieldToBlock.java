@@ -1,13 +1,16 @@
 package org.javacs.rewrite;
 
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.Map;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
 
 public class ConvertFieldToBlock implements Rewrite {
     final Path file;

@@ -1,10 +1,11 @@
 package org.javacs.rewrite;
 
-import java.nio.file.Path;
-import java.util.Map;
 import org.javacs.CompilerProvider;
 import org.javacs.FindTypeDeclarationAt;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.Map;
 
 public class RemoveClass implements Rewrite {
     final Path file;

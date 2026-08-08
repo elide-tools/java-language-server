@@ -12,18 +12,21 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.ExecutableElement;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.InlayHint;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.ExecutableElement;
+
 /**
- * `textDocument/inlayHint`: parameter-name hints at call sites and inferred-type
- * hints for {@code var} locals. Pure AST — native-image safe.
+ * `textDocument/inlayHint`: parameter-name hints at call sites and inferred-type hints for {@code
+ * var} locals. Pure AST — native-image safe.
  */
 public class InlayHintProvider {
     private final CompilerProvider compiler;
@@ -72,7 +75,10 @@ public class InlayHintProvider {
             return super.visitNewClass(t, acc);
         }
 
-        private void parameterHints(ExecutableElement method, List<? extends ExpressionTree> args, List<InlayHint> acc) {
+        private void parameterHints(
+                ExecutableElement method,
+                List<? extends ExpressionTree> args,
+                List<InlayHint> acc) {
             var params = method.getParameters();
             // Skip trailing varargs: their names add noise.
             var limit = method.isVarArgs() ? params.size() - 1 : params.size();
@@ -80,7 +86,8 @@ public class InlayHintProvider {
                 var arg = args.get(i);
                 var name = params.get(i).getSimpleName().toString();
                 // Skip when the argument already reads as the parameter name.
-                if (arg instanceof IdentifierTree && ((IdentifierTree) arg).getName().contentEquals(name)) continue;
+                if (arg instanceof IdentifierTree
+                        && ((IdentifierTree) arg).getName().contentEquals(name)) continue;
                 var position = startPosition(arg);
                 if (position == null) continue;
                 var hint = new InlayHint(position, name + ":", InlayHint.PARAMETER);
@@ -91,14 +98,19 @@ public class InlayHintProvider {
 
         @Override
         public Void visitVariable(VariableTree t, List<InlayHint> acc) {
-            if (t instanceof JCTree.JCVariableDecl && ((JCTree.JCVariableDecl) t).declaredUsingVar()) {
+            if (t instanceof JCTree.JCVariableDecl
+                    && ((JCTree.JCVariableDecl) t).declaredUsingVar()) {
                 var element = trees.getElement(getCurrentPath());
                 if (element != null) {
                     var root = getCurrentPath().getCompilationUnit();
                     var from = (int) pos.getStartPosition(root, t);
                     var position = namePosition(root, from, t.getName().toString());
                     if (position != null) {
-                        var hint = new InlayHint(position, ": " + simpleType(element.asType().toString()), InlayHint.TYPE);
+                        var hint =
+                                new InlayHint(
+                                        position,
+                                        ": " + simpleType(element.asType().toString()),
+                                        InlayHint.TYPE);
                         acc.add(hint);
                     }
                 }

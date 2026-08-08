@@ -5,15 +5,17 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+
 import org.javacs.FileStore;
 import org.javacs.FindHelper;
 import org.javacs.lsp.CodeLens;
 import org.javacs.lsp.Command;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
     private final JavacTask task;
@@ -137,7 +139,10 @@ class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
         if (nameStart < 0) return null;
         var line = (int) lines.getLineNumber(nameStart) - 1;
         var character = (int) lines.getColumnNumber(nameStart) - 1;
-        var range = new Range(new Position(line, character), new Position(line, character + name.length()));
+        var range =
+                new Range(
+                        new Position(line, character),
+                        new Position(line, character + name.length()));
         var data = new JsonObject();
         data.addProperty("uri", root.getSourceFile().toUri().toString());
         data.addProperty("line", line);
@@ -154,6 +159,8 @@ class FindCodeLenses extends TreeScanner<Void, List<CodeLens>> {
         var startColumn = (int) lines.getColumnNumber(start);
         var endLine = (int) lines.getLineNumber(end);
         var endColumn = (int) lines.getColumnNumber(end);
-        return new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+        return new Range(
+                new Position(startLine - 1, startColumn - 1),
+                new Position(endLine - 1, endColumn - 1));
     }
 }

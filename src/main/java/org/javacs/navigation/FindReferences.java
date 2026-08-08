@@ -2,7 +2,9 @@ package org.javacs.navigation;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
 import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 
@@ -56,8 +58,9 @@ class FindReferences extends TreePathScanner<Void, List<TreePath>> {
         }
         var pos = trees.getSourcePositions();
         // Skip elements without positions. This can happen, e.g. for var types.
-        if (pos.getStartPosition(path.getCompilationUnit(), path.getLeaf()) == Diagnostic.NOPOS ||
-            pos.getEndPosition(path.getCompilationUnit(), path.getLeaf()) == Diagnostic.NOPOS) {
+        if (pos.getStartPosition(path.getCompilationUnit(), path.getLeaf()) == Diagnostic.NOPOS
+                || pos.getEndPosition(path.getCompilationUnit(), path.getLeaf())
+                        == Diagnostic.NOPOS) {
             return false;
         }
         return true;

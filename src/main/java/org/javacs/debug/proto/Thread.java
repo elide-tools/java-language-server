@@ -4,6 +4,7 @@ package org.javacs.debug.proto;
 public class Thread {
     /** Unique identifier for the thread. */
     public Long id;
+
     /** A name of the thread. */
     public String name;
 }

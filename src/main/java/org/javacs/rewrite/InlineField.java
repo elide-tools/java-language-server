@@ -2,24 +2,27 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
+
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+
 /**
  * Inline a field: replace every reference with its initializer and delete the declaration.
  *
  * <p>Bounded to the provably-safe case: the field is {@code private static final} (so every use is
- * in this file and it is never reassigned), its initializer is side-effect-free, and every value the
- * initializer reads is itself a {@code static final} constant (or a type/literal). Under those
+ * in this file and it is never reassigned), its initializer is side-effect-free, and every value
+ * the initializer reads is itself a {@code static final} constant (or a type/literal). Under those
  * conditions the initializer denotes the same value at the declaration and at every use, so
  * substituting it preserves behavior. Otherwise the rewrite is CANCELLED.
  */
@@ -59,7 +62,9 @@ public class InlineField implements Rewrite {
         var target = trees.getElement(declPath);
         if (target == null || target.getKind() != ElementKind.FIELD) return null;
         var mods = target.getModifiers();
-        if (!(mods.contains(Modifier.PRIVATE) && mods.contains(Modifier.STATIC) && mods.contains(Modifier.FINAL))) {
+        if (!(mods.contains(Modifier.PRIVATE)
+                && mods.contains(Modifier.STATIC)
+                && mods.contains(Modifier.FINAL))) {
             return null;
         }
         if (!isPure(initializer)) return null;
@@ -154,8 +159,12 @@ public class InlineField implements Rewrite {
             var e = pos.getEndPosition(root, ref);
             var range =
                     new Range(
-                            new Position((int) lines.getLineNumber(s) - 1, (int) lines.getColumnNumber(s) - 1),
-                            new Position((int) lines.getLineNumber(e) - 1, (int) lines.getColumnNumber(e) - 1));
+                            new Position(
+                                    (int) lines.getLineNumber(s) - 1,
+                                    (int) lines.getColumnNumber(s) - 1),
+                            new Position(
+                                    (int) lines.getLineNumber(e) - 1,
+                                    (int) lines.getColumnNumber(e) - 1));
             edits.add(new TextEdit(range, replacement));
         }
         var delete = new Range(new Position(declStartLine - 1, 0), new Position(declEndLine, 0));

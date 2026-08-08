@@ -1,11 +1,12 @@
 package org.javacs.rewrite;
 
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.TextEdit;
+
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.TextEdit;
 
 /**
  * Rename a class/interface/enum/record/annotation type and every reference to it across the

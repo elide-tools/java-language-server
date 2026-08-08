@@ -1,9 +1,10 @@
 package org.javacs.lens;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.javacs.ParseTask;
 import org.javacs.lsp.CodeLens;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CodeLensProvider {
 

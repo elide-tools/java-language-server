@@ -2,17 +2,19 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
 /**
- * Surround the statement at {@code position} with a try/catch for {@code exceptionType}. Used as the
- * "catch" alternative to the "declare throws" quick fix for an unreported checked exception.
+ * Surround the statement at {@code position} with a try/catch for {@code exceptionType}. Used as
+ * the "catch" alternative to the "declare throws" quick fix for an unreported checked exception.
  *
  * <p>The enclosing block statement is wrapped; the generated handler rethrows wrapped in a {@code
  * RuntimeException} so the checked exception is handled without silently swallowing it. CANCELLED
@@ -65,14 +67,19 @@ public class CatchException implements Rewrite {
                             + "}";
             var range =
                     new Range(
-                            new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1),
-                            new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
+                            new Position(
+                                    (int) lines.getLineNumber(start) - 1,
+                                    (int) lines.getColumnNumber(start) - 1),
+                            new Position(
+                                    (int) lines.getLineNumber(end) - 1,
+                                    (int) lines.getColumnNumber(end) - 1));
             return Map.of(file, new TextEdit[] {new TextEdit(range, replacement)});
         }
     }
 
     /** The innermost statement that is a direct child of a block and contains {@code position}. */
-    private static StatementTree blockStatementAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static StatementTree blockStatementAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new StatementTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {

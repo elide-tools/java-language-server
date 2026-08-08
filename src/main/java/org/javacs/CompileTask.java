@@ -2,8 +2,10 @@ package org.javacs;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
+
 import java.nio.file.Path;
 import java.util.List;
+
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 

@@ -2,22 +2,25 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
+
 /**
  * Change the access modifier of the method whose signature the cursor is on. {@code access} is one
  * of {@code "public"}, {@code "protected"}, {@code "private"}, or {@code ""} (package-private): an
- * existing access keyword is replaced (or removed for package-private), and a missing one is inserted
- * before the return type. CANCELLED when the cursor is not on a method signature or the method
- * already has the requested access.
+ * existing access keyword is replaced (or removed for package-private), and a missing one is
+ * inserted before the return type. CANCELLED when the cursor is not on a method signature or the
+ * method already has the requested access.
  */
 public class ChangeMethodAccess implements Rewrite {
     final Path file;
@@ -39,7 +42,10 @@ public class ChangeMethodAccess implements Rewrite {
         }
     }
 
-    /** The method's current access ("public"/"protected"/"private"/""), or null if not on a signature. */
+    /**
+     * The method's current access ("public"/"protected"/"private"/""), or null if not on a
+     * signature.
+     */
     public static String currentAccess(CompileTask task, int position) {
         var trees = Trees.instance(task.task);
         var pos = trees.getSourcePositions();
@@ -85,7 +91,10 @@ public class ChangeMethodAccess implements Rewrite {
 
         // package-private -> add a keyword before the return type (or the name, for a constructor)
         var ret = method.getReturnType();
-        var anchor = ret != null ? (int) pos.getStartPosition(root, ret) : (int) pos.getStartPosition(root, method);
+        var anchor =
+                ret != null
+                        ? (int) pos.getStartPosition(root, ret)
+                        : (int) pos.getStartPosition(root, method);
         if (anchor < 0) return null;
         return new TextEdit[] {new TextEdit(range(lines, anchor, anchor), access + " ")};
     }
@@ -98,8 +107,11 @@ public class ChangeMethodAccess implements Rewrite {
         return "";
     }
 
-    /** The innermost method whose signature (declaration before its body) contains {@code position}. */
-    private static MethodTree methodSignatureAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    /**
+     * The innermost method whose signature (declaration before its body) contains {@code position}.
+     */
+    private static MethodTree methodSignatureAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new MethodTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {
@@ -121,7 +133,10 @@ public class ChangeMethodAccess implements Rewrite {
 
     private static Range range(com.sun.source.tree.LineMap lines, long start, long end) {
         return new Range(
-                new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1),
-                new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
+                new Position(
+                        (int) lines.getLineNumber(start) - 1,
+                        (int) lines.getColumnNumber(start) - 1),
+                new Position(
+                        (int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
     }
 }

@@ -4,6 +4,7 @@ package org.javacs.debug.proto;
 public class StepInArguments {
     /** Execute 'stepIn' for this thread. */
     public long threadId;
+
     /** Optional id of the target to step into. */
     public Integer targetId;
 }

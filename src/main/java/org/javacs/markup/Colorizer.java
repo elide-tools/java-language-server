@@ -2,10 +2,13 @@ package org.javacs.markup;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.nio.file.Paths;
-import javax.lang.model.element.*;
+
 import org.javacs.FileStore;
 import org.javacs.lsp.Range;
+
+import java.nio.file.Paths;
+
+import javax.lang.model.element.*;
 
 class Colorizer extends TreePathScanner<Void, SemanticColors> {
     private final Trees trees;
@@ -15,7 +18,9 @@ class Colorizer extends TreePathScanner<Void, SemanticColors> {
     }
 
     private void maybeField(Name name, SemanticColors colors) {
-        if (name.contentEquals("this") || name.contentEquals("super") || name.contentEquals("class")) {
+        if (name.contentEquals("this")
+                || name.contentEquals("super")
+                || name.contentEquals("class")) {
             return;
         }
         var fromPath = getCurrentPath();

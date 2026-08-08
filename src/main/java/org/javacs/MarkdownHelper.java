@@ -27,10 +27,12 @@ import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.doctree.ValueTree;
 import com.sun.source.doctree.VersionTree;
 import com.sun.source.util.DocTreeScanner;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.javacs.lsp.MarkupContent;
 import org.javacs.lsp.MarkupKind;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MarkdownHelper {
 

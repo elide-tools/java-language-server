@@ -3,12 +3,7 @@ package org.javacs.hover;
 import com.google.gson.JsonNull;
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
-import java.util.logging.Logger;
-import javax.lang.model.element.*;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.CompletionData;
@@ -18,6 +13,14 @@ import org.javacs.MarkdownHelper;
 import org.javacs.ParseTask;
 import org.javacs.lsp.CompletionItem;
 import org.javacs.lsp.MarkedString;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+import java.util.logging.Logger;
+
+import javax.lang.model.element.*;
 
 public class HoverProvider {
     final CompilerProvider compiler;
@@ -82,7 +85,8 @@ public class HoverProvider {
 
     private Tree findItem(ParseTask task, CompletionData data) {
         if (data.erasedParameterTypes != null) {
-            return FindHelper.findMethod(task, data.className, data.memberName, data.erasedParameterTypes);
+            return FindHelper.findMethod(
+                    task, data.className, data.memberName, data.erasedParameterTypes);
         }
         if (data.memberName != null) {
             return FindHelper.findField(task, data.className, data.memberName);
@@ -136,7 +140,8 @@ public class HoverProvider {
 
     // TODO this should be merged with logic in CompletionProvider
     // TODO this should parameterize the type
-    // TODO show more information about declarations---was this a parameter, a field? What were the modifiers?
+    // TODO show more information about declarations---was this a parameter, a field? What were the
+    // modifiers?
     private String printType(Element e) {
         if (e instanceof ExecutableElement) {
             var m = (ExecutableElement) e;
@@ -153,7 +158,10 @@ public class HoverProvider {
                 if (member instanceof ExecutableElement || member instanceof VariableElement) {
                     lines.add("  " + printType(member) + ";");
                 } else if (member instanceof TypeElement) {
-                    lines.add("  " + hoverTypeDeclaration((TypeElement) member) + " { /* removed */ }");
+                    lines.add(
+                            "  "
+                                    + hoverTypeDeclaration((TypeElement) member)
+                                    + " { /* removed */ }");
                 }
             }
             lines.add("}");

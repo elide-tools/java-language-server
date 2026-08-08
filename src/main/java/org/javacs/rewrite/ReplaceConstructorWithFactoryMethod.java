@@ -2,25 +2,29 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
-import javax.lang.model.element.Modifier;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Map;
+
+import javax.lang.model.element.Modifier;
+
 /**
- * Add a static {@code create(...)} factory method that delegates to the constructor the cursor is on,
- * and redirect {@code new ClassName(...)} expressions in the same file to {@code ClassName.create(...)}.
+ * Add a static {@code create(...)} factory method that delegates to the constructor the cursor is
+ * on, and redirect {@code new ClassName(...)} expressions in the same file to {@code
+ * ClassName.create(...)}.
  *
- * <p>Bounded for correctness and simple name resolution: the constructor's class must be a top-level
- * class with no type parameters and no existing {@code create} member, and only same-file {@code new}
- * calls are redirected (anonymous-class instantiations are left alone). The constructor stays as-is,
- * so instantiations in other files remain valid. CANCELLED otherwise.
+ * <p>Bounded for correctness and simple name resolution: the constructor's class must be a
+ * top-level class with no type parameters and no existing {@code create} member, and only same-file
+ * {@code new} calls are redirected (anonymous-class instantiations are left alone). The constructor
+ * stays as-is, so instantiations in other files remain valid. CANCELLED otherwise.
  */
 public class ReplaceConstructorWithFactoryMethod implements Rewrite {
     final Path file;
@@ -60,11 +64,13 @@ public class ReplaceConstructorWithFactoryMethod implements Rewrite {
         // Enclosing class must be top-level, non-generic, and free of a `create` clash.
         if (!(ctorPath.getParentPath().getLeaf() instanceof ClassTree)) return null;
         var cls = (ClassTree) ctorPath.getParentPath().getLeaf();
-        if (!(ctorPath.getParentPath().getParentPath().getLeaf() instanceof CompilationUnitTree)) return null;
+        if (!(ctorPath.getParentPath().getParentPath().getLeaf() instanceof CompilationUnitTree))
+            return null;
         if (!cls.getTypeParameters().isEmpty()) return null;
         var className = cls.getSimpleName().toString();
         for (var member : cls.getMembers()) {
-            if (member instanceof MethodTree && ((MethodTree) member).getName().contentEquals(FACTORY)) return null;
+            if (member instanceof MethodTree
+                    && ((MethodTree) member).getName().contentEquals(FACTORY)) return null;
         }
 
         CharSequence contents;
@@ -131,7 +137,10 @@ public class ReplaceConstructorWithFactoryMethod implements Rewrite {
                             var ae = (int) pos.getEndPosition(root, arg);
                             args.append(contents.subSequence(as, ae));
                         }
-                        edits.add(new TextEdit(range(lines, s, e), className + "." + FACTORY + "(" + args + ")"));
+                        edits.add(
+                                new TextEdit(
+                                        range(lines, s, e),
+                                        className + "." + FACTORY + "(" + args + ")"));
                     }
                 }
                 return super.visitNewClass(t, p);
@@ -150,7 +159,8 @@ public class ReplaceConstructorWithFactoryMethod implements Rewrite {
     }
 
     /** The innermost constructor whose signature contains {@code position}, or null. */
-    private static MethodTree constructorAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static MethodTree constructorAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new MethodTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {
@@ -174,7 +184,10 @@ public class ReplaceConstructorWithFactoryMethod implements Rewrite {
 
     private static Range range(com.sun.source.tree.LineMap lines, long start, long end) {
         return new Range(
-                new Position((int) lines.getLineNumber(start) - 1, (int) lines.getColumnNumber(start) - 1),
-                new Position((int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
+                new Position(
+                        (int) lines.getLineNumber(start) - 1,
+                        (int) lines.getColumnNumber(start) - 1),
+                new Position(
+                        (int) lines.getLineNumber(end) - 1, (int) lines.getColumnNumber(end) - 1));
     }
 }

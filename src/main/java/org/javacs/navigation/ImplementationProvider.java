@@ -4,21 +4,23 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.ElementFilter;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.Location;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.ElementFilter;
+
 /**
- * `textDocument/implementation`: from an interface/abstract method (or a type),
- * find its concrete implementations/overriders across the workspace. Pure
- * javac element analysis — native-image safe.
+ * `textDocument/implementation`: from an interface/abstract method (or a type), find its concrete
+ * implementations/overriders across the workspace. Pure javac element analysis — native-image safe.
  */
 public class ImplementationProvider {
     private final CompilerProvider compiler;
@@ -72,7 +74,8 @@ public class ImplementationProvider {
             ExecutableElement targetMethod = null;
             if (methodName != null) {
                 for (var m : ElementFilter.methodsIn(target.getEnclosedElements())) {
-                    if (m.getSimpleName().contentEquals(methodName) && m.getParameters().size() == arity) {
+                    if (m.getSimpleName().contentEquals(methodName)
+                            && m.getParameters().size() == arity) {
                         targetMethod = m;
                         break;
                     }
@@ -87,13 +90,16 @@ public class ImplementationProvider {
                     if (!(el instanceof TypeElement)) continue;
                     var subtype = (TypeElement) el;
                     if (subtype.equals(target)) continue;
-                    if (!types.isSubtype(types.erasure(subtype.asType()), types.erasure(target.asType()))) continue;
+                    if (!types.isSubtype(
+                            types.erasure(subtype.asType()), types.erasure(target.asType())))
+                        continue;
                     if (methodName == null) {
                         locations.add(FindHelper.location(task, path, subtype.getSimpleName()));
                         continue;
                     }
                     if (targetMethod == null) continue;
-                    addOverrider(task, trees, elements, subtype, targetMethod, methodName, locations);
+                    addOverrider(
+                            task, trees, elements, subtype, targetMethod, methodName, locations);
                 }
             }
         }

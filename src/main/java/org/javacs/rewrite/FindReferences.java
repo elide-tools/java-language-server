@@ -5,6 +5,7 @@ import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.*;
+
 import java.util.function.Consumer;
 
 class FindReferences extends TreePathScanner<Void, Consumer<TreePath>> {

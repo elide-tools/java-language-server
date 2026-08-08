@@ -33,7 +33,13 @@ public class LogFormat extends Formatter {
             throwable = sw.toString();
         }
         return String.format(
-                format, date, source, record.getLoggerName(), record.getLevel().getLocalizedName(), message, throwable);
+                format,
+                date,
+                source,
+                record.getLoggerName(),
+                record.getLevel().getLocalizedName(),
+                message,
+                throwable);
     }
 
     private String last(String className) {

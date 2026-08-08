@@ -4,7 +4,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-// Read the classfile format defined in https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html
+// Read the classfile format defined in
+// https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html
 class ClassHeader {
 
     final boolean isPublic, isFinal, isInterface, isAbstract, isAnnotation, isEnum, isModule;
@@ -45,13 +46,16 @@ class ClassHeader {
         }
     }
 
-    private static final int ACC_PUBLIC = 0x0001; // Declared public; may be accessed from outside its package.
+    private static final int ACC_PUBLIC =
+            0x0001; // Declared public; may be accessed from outside its package.
     private static final int ACC_FINAL = 0x0010; // Declared final; no subclasses allowed.
     private static final int ACC_SUPER =
-            0x0020; // Treat superclass methods specially when invoked by the invokespecial instruction.
+            0x0020; // Treat superclass methods specially when invoked by the invokespecial
+                    // instruction.
     private static final int ACC_INTERFACE = 0x0200; // Is an interface, not a class.
     private static final int ACC_ABSTRACT = 0x0400; // Declared abstract; must not be instantiated.
-    private static final int ACC_SYNTHETIC = 0x1000; // Declared synthetic; not present in the source code.
+    private static final int ACC_SYNTHETIC =
+            0x1000; // Declared synthetic; not present in the source code.
     private static final int ACC_ANNOTATION = 0x2000; // Declared as an annotation type.
     private static final int ACC_ENUM = 0x4000; // Declared as an enum type.
     private static final int ACC_MODULE = 0x8000; // Is a module, not a class or interface.

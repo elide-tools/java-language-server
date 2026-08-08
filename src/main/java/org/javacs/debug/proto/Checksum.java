@@ -4,6 +4,7 @@ package org.javacs.debug.proto;
 public class Checksum {
     /** The algorithm used to calculate this checksum. 'MD5' | 'SHA1' | 'SHA256' | 'timestamp'. */
     public String algorithm;
+
     /** Value of the checksum. */
     public String checksum;
 }

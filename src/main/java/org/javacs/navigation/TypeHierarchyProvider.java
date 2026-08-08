@@ -4,22 +4,24 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.SymbolKind;
 import org.javacs.lsp.TypeHierarchyItem;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
+
 /**
- * `typeHierarchy/*`: prepare a type item, then its direct supertypes and its
- * subtypes across the workspace. Pure javac element analysis — native-image
- * safe.
+ * `typeHierarchy/*`: prepare a type item, then its direct supertypes and its subtypes across the
+ * workspace. Pure javac element analysis — native-image safe.
  */
 public class TypeHierarchyProvider {
     private final CompilerProvider compiler;
@@ -90,7 +92,9 @@ public class TypeHierarchyProvider {
                     if (!(el instanceof TypeElement)) continue;
                     var candidate = (TypeElement) el;
                     if (candidate.equals(target)) continue;
-                    if (!types.isSubtype(types.erasure(candidate.asType()), types.erasure(target.asType()))) continue;
+                    if (!types.isSubtype(
+                            types.erasure(candidate.asType()), types.erasure(target.asType())))
+                        continue;
                     var qn = candidate.getQualifiedName().toString();
                     if (seen.contains(qn)) continue;
                     seen.add(qn);
@@ -139,7 +143,10 @@ public class TypeHierarchyProvider {
         item.selectionRange = FindHelper.location(task, classPath, type.getSimpleName()).range;
         var enclosing = type.getEnclosingElement();
         if (enclosing instanceof javax.lang.model.element.PackageElement) {
-            item.detail = ((javax.lang.model.element.PackageElement) enclosing).getQualifiedName().toString();
+            item.detail =
+                    ((javax.lang.model.element.PackageElement) enclosing)
+                            .getQualifiedName()
+                            .toString();
         }
         return item;
     }

@@ -6,15 +6,7 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
@@ -24,10 +16,21 @@ import org.javacs.lsp.CallHierarchyOutgoingCall;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.SymbolKind;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+
 /**
- * `callHierarchy/*`: prepare a method item, then find its callers (incoming) and
- * callees (outgoing). Reuses {@link FindReferences} for callers and walks the
- * method body for callees. Pure javac element analysis — native-image safe.
+ * `callHierarchy/*`: prepare a method item, then find its callers (incoming) and callees
+ * (outgoing). Reuses {@link FindReferences} for callers and walks the method body for callees. Pure
+ * javac element analysis — native-image safe.
  */
 public class CallHierarchyProvider {
     private final CompilerProvider compiler;
@@ -76,7 +79,9 @@ public class CallHierarchyProvider {
                     var callerItem = item(task, callerPath);
                     if (callerItem == null) continue;
                     var key = key(callerItem);
-                    var call = result.computeIfAbsent(key, k -> new CallHierarchyIncomingCall(callerItem));
+                    var call =
+                            result.computeIfAbsent(
+                                    key, k -> new CallHierarchyIncomingCall(callerItem));
                     call.fromRanges.add(FindHelper.location(task, ref).range);
                 }
             }
@@ -95,20 +100,25 @@ public class CallHierarchyProvider {
             var el = NavigationHelper.findElement(task, file, line, column);
             if (!(el instanceof ExecutableElement)) return List.of();
             var methodPath = trees.getPath(el);
-            if (methodPath == null || !(methodPath.getLeaf() instanceof MethodTree)) return List.of();
+            if (methodPath == null || !(methodPath.getLeaf() instanceof MethodTree))
+                return List.of();
             new CalleeScanner(task, result, crossFile).scan(methodPath, null);
         }
         for (var ref : crossFile) {
             var declFile = compiler.findAnywhere(ref.className);
             if (declFile.isEmpty()) continue;
             try (var task = compiler.compile(List.of(declFile.get()))) {
-                var method = FindHelper.findMethod(task, ref.className, ref.methodName, ref.erasedParameterTypes);
+                var method =
+                        FindHelper.findMethod(
+                                task, ref.className, ref.methodName, ref.erasedParameterTypes);
                 if (method == null) continue;
                 var path = Trees.instance(task.task).getPath(method);
                 if (path == null) continue;
                 var item = item(task, path);
                 if (item == null) continue;
-                result.computeIfAbsent(key(item), k -> new CallHierarchyOutgoingCall(item)).fromRanges.add(ref.range);
+                result.computeIfAbsent(key(item), k -> new CallHierarchyOutgoingCall(item))
+                        .fromRanges
+                        .add(ref.range);
             } catch (RuntimeException ignored) {
                 // unresolved cross-file callee (e.g. default-package getTypeElement) — skip
             }
@@ -151,16 +161,19 @@ public class CallHierarchyProvider {
             if (declPath != null) {
                 var item = item(task, declPath);
                 if (item == null) return;
-                sameFile.computeIfAbsent(key(item), k -> new CallHierarchyOutgoingCall(item)).fromRanges.add(range);
+                sameFile.computeIfAbsent(key(item), k -> new CallHierarchyOutgoingCall(item))
+                        .fromRanges
+                        .add(range);
                 return;
             }
             var parent = callee.getEnclosingElement();
             if (!(parent instanceof TypeElement)) return;
-            crossFile.add(new CalleeRef(
-                    ((TypeElement) parent).getQualifiedName().toString(),
-                    callee.getSimpleName().toString(),
-                    FindHelper.erasedParameterTypes(task, (ExecutableElement) callee),
-                    range));
+            crossFile.add(
+                    new CalleeRef(
+                            ((TypeElement) parent).getQualifiedName().toString(),
+                            callee.getSimpleName().toString(),
+                            FindHelper.erasedParameterTypes(task, (ExecutableElement) callee),
+                            range));
         }
     }
 
@@ -186,7 +199,11 @@ public class CallHierarchyProvider {
     }
 
     private static String key(CallHierarchyItem item) {
-        return item.uri + "#" + item.selectionRange.start.line + ":" + item.selectionRange.start.character;
+        return item.uri
+                + "#"
+                + item.selectionRange.start.line
+                + ":"
+                + item.selectionRange.start.character;
     }
 
     private static CallHierarchyItem item(CompileTask task, TreePath methodPath) {
@@ -199,7 +216,10 @@ public class CallHierarchyProvider {
         }
         var item = new CallHierarchyItem();
         item.name = displayName;
-        item.kind = method.getKind() == ElementKind.CONSTRUCTOR ? SymbolKind.Constructor : SymbolKind.Method;
+        item.kind =
+                method.getKind() == ElementKind.CONSTRUCTOR
+                        ? SymbolKind.Constructor
+                        : SymbolKind.Method;
         item.uri = methodPath.getCompilationUnit().getSourceFile().toUri();
         item.range = FindHelper.location(task, methodPath).range;
         item.selectionRange = FindHelper.location(task, methodPath, displayName).range;

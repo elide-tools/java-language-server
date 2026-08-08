@@ -1,5 +1,10 @@
 package org.javacs;
 
+import org.javacs.lsp.DidChangeTextDocumentParams;
+import org.javacs.lsp.DidCloseTextDocumentParams;
+import org.javacs.lsp.DidOpenTextDocumentParams;
+import org.javacs.lsp.TextDocumentContentChangeEvent;
+
 import java.io.*;
 import java.net.URI;
 import java.nio.charset.CharacterCodingException;
@@ -8,11 +13,8 @@ import java.nio.file.attribute.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
+
 import javax.lang.model.element.TypeElement;
-import org.javacs.lsp.DidChangeTextDocumentParams;
-import org.javacs.lsp.DidCloseTextDocumentParams;
-import org.javacs.lsp.DidOpenTextDocumentParams;
-import org.javacs.lsp.TextDocumentContentChangeEvent;
 
 public class FileStore {
 
@@ -232,7 +234,8 @@ public class FileStore {
         var file = Paths.get(document.uri);
         var existing = activeDocuments.get(file);
         if (document.version <= existing.version) {
-            LOG.warning("Ignored change with version " + document.version + " <= " + existing.version);
+            LOG.warning(
+                    "Ignored change with version " + document.version + " <= " + existing.version);
             return;
         }
         var newText = existing.content;
@@ -373,9 +376,13 @@ public class FileStore {
         // it goes into "module mode" and starts looking for classes on the module class path.
         // This becomes evident when javac starts recompiling *way too much* on each task,
         // because it doesn't realize there are already up-to-date .class files.
-        // The better solution would be for java-language server to detect the presence of module-info.java,
-        // and go into its own "module mode" where it infers a module source path and a module class path.
-        return name.endsWith(".java") && !Files.isDirectory(file) && !name.equals("module-info.java");
+        // The better solution would be for java-language server to detect the presence of
+        // module-info.java,
+        // and go into its own "module mode" where it infers a module source path and a module class
+        // path.
+        return name.endsWith(".java")
+                && !Files.isDirectory(file)
+                && !name.equals("module-info.java");
     }
 
     static boolean isJavaFile(URI uri) {

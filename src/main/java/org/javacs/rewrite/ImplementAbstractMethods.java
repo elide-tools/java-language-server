@@ -2,21 +2,24 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.MethodTree;
 import com.sun.source.util.Trees;
+
+import org.javacs.CompileTask;
+import org.javacs.CompilerProvider;
+import org.javacs.FindHelper;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.logging.Logger;
+
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
-import org.javacs.CompileTask;
-import org.javacs.CompilerProvider;
-import org.javacs.FindHelper;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 public class ImplementAbstractMethods implements Rewrite {
     final String className;
@@ -38,7 +41,8 @@ public class ImplementAbstractMethods implements Rewrite {
             var thisTree = trees.getTree(thisClass);
             var indent = EditHelper.indent(task.task, task.root(), thisTree) + 4;
             for (var member : elements.getAllMembers(thisClass)) {
-                if (member.getKind() == ElementKind.METHOD && member.getModifiers().contains(Modifier.ABSTRACT)) {
+                if (member.getKind() == ElementKind.METHOD
+                        && member.getModifiers().contains(Modifier.ABSTRACT)) {
                     var method = (ExecutableElement) member;
                     var source = findSource(compiler, task, method);
                     if (source == null) {
@@ -56,7 +60,8 @@ public class ImplementAbstractMethods implements Rewrite {
         }
     }
 
-    private MethodTree findSource(CompilerProvider compiler, CompileTask task, ExecutableElement method) {
+    private MethodTree findSource(
+            CompilerProvider compiler, CompileTask task, ExecutableElement method) {
         var superClass = (TypeElement) method.getEnclosingElement();
         var superClassName = superClass.getQualifiedName().toString();
         var methodName = method.getSimpleName().toString();

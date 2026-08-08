@@ -1,6 +1,13 @@
 package org.javacs.rewrite;
 
 import com.sun.source.util.Trees;
+
+import org.javacs.CompileTask;
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.Position;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -10,11 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.javacs.CompileTask;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.Position;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 public class AutoFixImports implements Rewrite {
     final Path file;
@@ -79,7 +81,11 @@ public class AutoFixImports implements Rewrite {
             }
             if (candidates.isEmpty()) continue;
             if (candidates.size() > 1) {
-                LOG.warning("..." + className + " is ambiguous between " + String.join(", ", candidates));
+                LOG.warning(
+                        "..."
+                                + className
+                                + " is ambiguous between "
+                                + String.join(", ", candidates));
                 continue;
             }
             LOG.info("...resolve " + className + " to " + candidates.get(0));
@@ -97,7 +103,8 @@ public class AutoFixImports implements Rewrite {
             if (i.isStatic()) continue;
             var start = pos.getStartPosition(root, i);
             var line = (int) root.getLineMap().getLineNumber(start);
-            var delete = new TextEdit(new Range(new Position(line - 1, 0), new Position(line, 0)), "");
+            var delete =
+                    new TextEdit(new Range(new Position(line - 1, 0), new Position(line, 0)), "");
             edits.add(delete);
         }
         return edits;

@@ -4,30 +4,44 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Name;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FileStore;
 import org.javacs.lsp.Range;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Name;
+
 /**
- * `textDocument/semanticTokens/full`: classify every identifier/member-select/
- * declaration name by its resolved element kind and emit LSP delta-encoded
- * semantic tokens. Pure AST — native-image safe. Richer than the legacy
- * `java/colors` notification (which only reported static + field references).
+ * `textDocument/semanticTokens/full`: classify every identifier/member-select/ declaration name by
+ * its resolved element kind and emit LSP delta-encoded semantic tokens. Pure AST — native-image
+ * safe. Richer than the legacy `java/colors` notification (which only reported static + field
+ * references).
  */
 public class SemanticTokensProvider {
     /** Legend, in index order; mirrored into the server capability. */
     public static final List<String> TOKEN_TYPES =
-            List.of("type", "typeParameter", "parameter", "variable", "property", "enumMember", "method");
+            List.of(
+                    "type",
+                    "typeParameter",
+                    "parameter",
+                    "variable",
+                    "property",
+                    "enumMember",
+                    "method");
 
-    private static final int TYPE = 0, TYPE_PARAMETER = 1, PARAMETER = 2, VARIABLE = 3, PROPERTY = 4, ENUM_MEMBER = 5,
+    private static final int TYPE = 0,
+            TYPE_PARAMETER = 1,
+            PARAMETER = 2,
+            VARIABLE = 3,
+            PROPERTY = 4,
+            ENUM_MEMBER = 5,
             METHOD = 6;
 
     private final CompilerProvider compiler;
@@ -50,7 +64,11 @@ public class SemanticTokensProvider {
             var root = task.root(file);
             var raw = new ArrayList<int[]>(); // {line, startChar, length, tokenType}
             new Tokenizer(task.task, file).scan(root, raw);
-            raw.sort((a, b) -> a[0] != b[0] ? Integer.compare(a[0], b[0]) : Integer.compare(a[1], b[1]));
+            raw.sort(
+                    (a, b) ->
+                            a[0] != b[0]
+                                    ? Integer.compare(a[0], b[0])
+                                    : Integer.compare(a[1], b[1]));
             if (range != null) {
                 raw.removeIf(t -> !inRange(t, range));
             }
@@ -61,7 +79,8 @@ public class SemanticTokensProvider {
     private static boolean inRange(int[] t, Range range) {
         var line = t[0];
         var character = t[1];
-        if (line < range.start.line || (line == range.start.line && character < range.start.character)) {
+        if (line < range.start.line
+                || (line == range.start.line && character < range.start.character)) {
             return false;
         }
         if (line > range.end.line || (line == range.end.line && character > range.end.character)) {
@@ -147,7 +166,9 @@ public class SemanticTokensProvider {
         }
 
         private void emit(Name name, List<int[]> acc) {
-            if (name.contentEquals("this") || name.contentEquals("super") || name.contentEquals("class")) return;
+            if (name.contentEquals("this")
+                    || name.contentEquals("super")
+                    || name.contentEquals("class")) return;
             var path = getCurrentPath();
             var element = trees.getElement(path);
             if (element == null) return;

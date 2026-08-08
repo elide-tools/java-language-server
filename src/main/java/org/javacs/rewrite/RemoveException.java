@@ -3,24 +3,31 @@ package org.javacs.rewrite;
 import com.sun.source.tree.*;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Trees;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.regex.Pattern;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+
 public class RemoveException implements Rewrite {
     final String className, methodName;
     final String[] erasedParameterTypes;
     final String exceptionType;
 
-    public RemoveException(String className, String methodName, String[] erasedParameterTypes, String exceptionType) {
+    public RemoveException(
+            String className,
+            String methodName,
+            String[] erasedParameterTypes,
+            String exceptionType) {
         this.className = className;
         this.methodName = methodName;
         this.erasedParameterTypes = erasedParameterTypes;
@@ -31,7 +38,8 @@ public class RemoveException implements Rewrite {
     public Map<Path, TextEdit[]> rewrite(CompilerProvider compiler) {
         var file = compiler.findTypeDeclaration(className);
         try (var task = compiler.compile(file)) {
-            var methodElement = FindHelper.findMethod(task, className, methodName, erasedParameterTypes);
+            var methodElement =
+                    FindHelper.findMethod(task, className, methodName, erasedParameterTypes);
             var methodTree = Trees.instance(task.task).getTree(methodElement);
             if (methodTree.getThrows().size() == 1) {
                 var delete = removeEntireThrows(task.task, task.root(), methodTree);
@@ -46,7 +54,8 @@ public class RemoveException implements Rewrite {
 
     private static final Pattern THROWS = Pattern.compile("\\s*\\bthrows\\b");
 
-    private TextEdit removeEntireThrows(JavacTask task, CompilationUnitTree root, MethodTree method) {
+    private TextEdit removeEntireThrows(
+            JavacTask task, CompilationUnitTree root, MethodTree method) {
         var trees = Trees.instance(task);
         var pos = trees.getSourcePositions();
         var startMethod = (int) pos.getStartPosition(root, method);
@@ -73,7 +82,8 @@ public class RemoveException implements Rewrite {
         return new TextEdit(new Range(startPos, endPos), "");
     }
 
-    private TextEdit removeSingleException(JavacTask task, CompilationUnitTree root, MethodTree method) {
+    private TextEdit removeSingleException(
+            JavacTask task, CompilationUnitTree root, MethodTree method) {
         var i = findNamedException(task, root, method);
         if (i == -1) return TextEdit.NONE;
         var trees = Trees.instance(task);

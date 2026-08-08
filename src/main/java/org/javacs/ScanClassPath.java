@@ -1,5 +1,7 @@
 package org.javacs;
 
+import org.javacs.guava.ClassPath;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -12,7 +14,6 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.javacs.guava.ClassPath;
 
 class ScanClassPath {
 
@@ -130,7 +131,8 @@ class ScanClassPath {
                     }
                 }
             } catch (IOException e) {
-                // LOG.log(Level.WARNING, "Failed indexing module " + m + "(" + e.getMessage() + ")");
+                // LOG.log(Level.WARNING, "Failed indexing module " + m + "(" + e.getMessage() +
+                // ")");
             }
         }
 
@@ -140,7 +142,10 @@ class ScanClassPath {
     }
 
     static Set<String> classPathTopLevelClasses(Set<Path> classPath) {
-        LOG.info(String.format("Searching for top-level classes in %d classpath locations", classPath.size()));
+        LOG.info(
+                String.format(
+                        "Searching for top-level classes in %d classpath locations",
+                        classPath.size()));
 
         var urls = classPath.stream().map(ScanClassPath::toUrl).toArray(URL[]::new);
         var classLoader = new URLClassLoader(urls, null);

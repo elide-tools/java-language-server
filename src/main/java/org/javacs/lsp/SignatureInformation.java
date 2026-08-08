@@ -9,7 +9,8 @@ public class SignatureInformation {
 
     public SignatureInformation() {}
 
-    public SignatureInformation(String label, MarkupContent documentation, List<ParameterInformation> parameters) {
+    public SignatureInformation(
+            String label, MarkupContent documentation, List<ParameterInformation> parameters) {
         this.label = label;
         this.documentation = documentation;
         this.parameters = parameters;

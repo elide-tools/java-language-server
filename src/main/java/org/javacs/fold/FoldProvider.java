@@ -2,13 +2,15 @@ package org.javacs.fold;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
+import org.javacs.CompilerProvider;
+import org.javacs.ParseTask;
+import org.javacs.lsp.*;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import org.javacs.CompilerProvider;
-import org.javacs.ParseTask;
-import org.javacs.lsp.*;
 
 public class FoldProvider {
 

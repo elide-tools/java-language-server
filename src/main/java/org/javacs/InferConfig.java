@@ -16,12 +16,16 @@ class InferConfig {
 
     /** Root of the workspace that is currently open in VSCode */
     private final Path workspaceRoot;
+
     /** External dependencies specified manually by the user */
     private final Collection<String> externalDependencies;
+
     /** Location of the maven repository, usually ~/.m2 */
     private final Path mavenHome;
+
     /** Location of the gradle cache, usually ~/.gradle */
     private final Path gradleHome;
+
     /** Environment variables, primarily for testing */
     private final Map<String, String> envVars;
 
@@ -38,8 +42,17 @@ class InferConfig {
         this.envVars = Objects.requireNonNullElseGet(envVars, System::getenv);
     }
 
-    InferConfig(Path workspaceRoot, Collection<String> externalDependencies, Path mavenHome, Path gradleHome) {
-        this(workspaceRoot, externalDependencies, mavenHome, gradleHome, null); // Null envVars defaults to System.getenv()
+    InferConfig(
+            Path workspaceRoot,
+            Collection<String> externalDependencies,
+            Path mavenHome,
+            Path gradleHome) {
+        this(
+                workspaceRoot,
+                externalDependencies,
+                mavenHome,
+                gradleHome,
+                null); // Null envVars defaults to System.getenv()
     }
 
     InferConfig(Path workspaceRoot, Collection<String> externalDependencies) {
@@ -52,7 +65,12 @@ class InferConfig {
 
     // Constructor for testing, allowing envVars injection.
     InferConfig(Path workspaceRoot, Map<String, String> envVars) {
-        this(workspaceRoot, Collections.emptySet(), defaultMavenHome(), defaultGradleHome(), envVars);
+        this(
+                workspaceRoot,
+                Collections.emptySet(),
+                defaultMavenHome(),
+                defaultGradleHome(),
+                envVars);
     }
 
     private static Path defaultMavenHome() {
@@ -82,7 +100,10 @@ class InferConfig {
                 var a = Artifact.parse(id);
                 var found = findAnyJar(a, false);
                 if (found == NOT_FOUND) {
-                    LOG.warning(String.format("Couldn't find jar for %s in %s or %s", a, mavenHome, gradleHome));
+                    LOG.warning(
+                            String.format(
+                                    "Couldn't find jar for %s in %s or %s",
+                                    a, mavenHome, gradleHome));
                     continue;
                 }
                 result.add(found);
@@ -108,7 +129,10 @@ class InferConfig {
                 var a = Artifact.parse(id);
                 var found = findAnyJar(a, true);
                 if (found == NOT_FOUND) {
-                    LOG.warning(String.format("Couldn't find doc jar for %s in %s or %s", a, mavenHome, gradleHome));
+                    LOG.warning(
+                            String.format(
+                                    "Couldn't find doc jar for %s in %s or %s",
+                                    a, mavenHome, gradleHome));
                     continue;
                 }
                 result.add(found);
@@ -149,7 +173,8 @@ class InferConfig {
     }
 
     private Path findGradleJar(Artifact artifact, boolean source) {
-        // Search for caches/modules-*/files-*/groupId/artifactId/version/*/artifactId-version[-sources].jar
+        // Search for
+        // caches/modules-*/files-*/groupId/artifactId/version/*/artifactId-version[-sources].jar
         var base = gradleHome.resolve("caches");
         var pattern =
                 "glob:"
@@ -179,7 +204,8 @@ class InferConfig {
     static Set<Path> mvnDependencies(Path pomXml, String goal, Map<String, String> envVars) {
         Objects.requireNonNull(pomXml, "pom.xml path is null");
         try {
-            // TODO consider using mvn valide dependency:copy-dependencies -DoutputDirectory=??? instead
+            // TODO consider using mvn valide dependency:copy-dependencies -DoutputDirectory=???
+            // instead
             // Run maven as a subprocess
             String[] command = {
                 getMvnCommand(envVars),

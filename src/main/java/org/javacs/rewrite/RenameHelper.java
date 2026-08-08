@@ -1,7 +1,7 @@
 package org.javacs.rewrite;
 
-import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -10,6 +10,13 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
+
+import org.javacs.CompileTask;
+import org.javacs.FindHelper;
+import org.javacs.lsp.Position;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,16 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import org.javacs.CompileTask;
-import org.javacs.FindHelper;
-import org.javacs.lsp.Position;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 class RenameHelper {
     final CompileTask task;
@@ -76,7 +79,8 @@ class RenameHelper {
         return allEdits;
     }
 
-    Map<Path, TextEdit[]> renameType(List<CompilationUnitTree> roots, String className, String newName) {
+    Map<Path, TextEdit[]> renameType(
+            List<CompilationUnitTree> roots, String className, String newName) {
         var allEdits = new HashMap<Path, TextEdit[]>();
         var target = findTypeElement(roots, className);
         if (target == null) return Map.of();
@@ -173,7 +177,9 @@ class RenameHelper {
             var endLine = (int) lines.getLineNumber(endPos);
             var endColumn = (int) lines.getColumnNumber(endPos);
             var range =
-                    new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+                    new Range(
+                            new Position(startLine - 1, startColumn - 1),
+                            new Position(endLine - 1, endColumn - 1));
             var key = startLine + ":" + startColumn + "-" + endLine + ":" + endColumn;
             byRange.putIfAbsent(key, new TextEdit(range, newName));
         }
@@ -194,7 +200,8 @@ class RenameHelper {
         return found;
     }
 
-    private List<TreePath> findFieldReferences(CompilationUnitTree root, String className, String fieldName) {
+    private List<TreePath> findFieldReferences(
+            CompilationUnitTree root, String className, String fieldName) {
         var found = new ArrayList<TreePath>();
         Consumer<TreePath> forEach =
                 path -> {
@@ -270,7 +277,9 @@ class RenameHelper {
             var endLine = (int) lines.getLineNumber(endPos);
             var endColumn = (int) lines.getColumnNumber(endPos);
             var range =
-                    new Range(new Position(startLine - 1, startColumn - 1), new Position(endLine - 1, endColumn - 1));
+                    new Range(
+                            new Position(startLine - 1, startColumn - 1),
+                            new Position(endLine - 1, endColumn - 1));
             edits[i++] = new TextEdit(range, newName);
         }
         return edits;

@@ -1,20 +1,26 @@
 package org.javacs.rewrite;
 
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.Map;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
 
+import java.nio.file.Path;
+import java.util.Map;
+
 public class AddException implements Rewrite {
     final String className, methodName;
     final String[] erasedParameterTypes;
     final String exceptionType;
 
-    public AddException(String className, String methodName, String[] erasedParameterTypes, String exceptionType) {
+    public AddException(
+            String className,
+            String methodName,
+            String[] erasedParameterTypes,
+            String exceptionType) {
         this.className = className;
         this.methodName = methodName;
         this.erasedParameterTypes = erasedParameterTypes;
@@ -29,7 +35,8 @@ public class AddException implements Rewrite {
         }
         try (var task = compiler.compile(file)) {
             var trees = Trees.instance(task.task);
-            var methodElement = FindHelper.findMethod(task, className, methodName, erasedParameterTypes);
+            var methodElement =
+                    FindHelper.findMethod(task, className, methodName, erasedParameterTypes);
             var methodTree = trees.getTree(methodElement);
             var pos = trees.getSourcePositions();
             var lines = task.root().getLineMap();

@@ -6,7 +6,8 @@ public class FoldingRange {
 
     public FoldingRange() {}
 
-    public FoldingRange(int startLine, int startCharacter, int endLine, int endCharacter, String kind) {
+    public FoldingRange(
+            int startLine, int startCharacter, int endLine, int endCharacter, String kind) {
         this.startLine = startLine;
         this.startCharacter = startCharacter;
         this.endLine = endLine;

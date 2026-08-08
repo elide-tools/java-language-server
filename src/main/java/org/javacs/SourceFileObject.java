@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
@@ -11,10 +12,13 @@ import javax.tools.JavaFileObject;
 public class SourceFileObject implements JavaFileObject {
     /** path is the absolute path to this file on disk */
     final Path path;
+
     /** contents is the text in this file, or null if we should use the text in FileStore */
     final String contents;
+
     /** if contents is set, the modified version of contents in monotonic nanoseconds */
     final long modified;
+
     private static final AtomicLong LAST_NOW = new AtomicLong();
 
     public SourceFileObject(Path path) {

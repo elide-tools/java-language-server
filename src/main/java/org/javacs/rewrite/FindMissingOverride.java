@@ -2,8 +2,10 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
 import java.util.*;
 import java.util.logging.Logger;
+
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 

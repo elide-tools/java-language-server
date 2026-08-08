@@ -2,17 +2,20 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import javax.lang.model.element.Element;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.lang.model.element.Element;
 
 /**
  * Inline a call to a method whose body is a single {@code return <expr>;}, replacing the call
@@ -21,8 +24,8 @@ import org.javacs.lsp.TextEdit;
  * <p>Bounded to the cases where this is provably behavior-preserving: the callee is declared in the
  * same file, is not varargs, and its returned expression references only its own parameters (no
  * fields, {@code this}, other methods, or types that might not resolve at the call site). Every
- * argument must be side-effect-free, so substituting it any number of times — including zero, for an
- * unused parameter — preserves behavior. Each substituted argument and the whole result are
+ * argument must be side-effect-free, so substituting it any number of times — including zero, for
+ * an unused parameter — preserves behavior. Each substituted argument and the whole result are
  * parenthesized to preserve evaluation order. Otherwise the rewrite is CANCELLED.
  */
 public class InlineMethod implements Rewrite {
@@ -84,7 +87,8 @@ public class InlineMethod implements Rewrite {
 
         // The body expression may reference only the method's own parameters.
         var returnedPath = trees.getPath(root, returned);
-        if (returnedPath == null || !referencesOnlyParams(trees, returnedPath, params.keySet())) return null;
+        if (returnedPath == null || !referencesOnlyParams(trees, returnedPath, params.keySet()))
+            return null;
 
         CharSequence contents;
         try {
@@ -133,13 +137,18 @@ public class InlineMethod implements Rewrite {
         var callEnd = (int) pos.getEndPosition(root, call);
         var range =
                 new Range(
-                        new Position((int) lines.getLineNumber(callStart) - 1, (int) lines.getColumnNumber(callStart) - 1),
-                        new Position((int) lines.getLineNumber(callEnd) - 1, (int) lines.getColumnNumber(callEnd) - 1));
+                        new Position(
+                                (int) lines.getLineNumber(callStart) - 1,
+                                (int) lines.getColumnNumber(callStart) - 1),
+                        new Position(
+                                (int) lines.getLineNumber(callEnd) - 1,
+                                (int) lines.getColumnNumber(callEnd) - 1));
         return new TextEdit[] {new TextEdit(range, replacement)};
     }
 
     /** The innermost method invocation whose source range contains {@code position}, or null. */
-    private static MethodInvocationTree callAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static MethodInvocationTree callAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new MethodInvocationTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {
@@ -159,7 +168,9 @@ public class InlineMethod implements Rewrite {
 
     /** The declaration of {@code target} within the same compilation unit, or null. */
     private static MethodTree findMethod(
-            CompilationUnitTree root, Trees trees, javax.lang.model.element.ExecutableElement target) {
+            CompilationUnitTree root,
+            Trees trees,
+            javax.lang.model.element.ExecutableElement target) {
         var result = new MethodTree[1];
         new TreePathScanner<Void, Void>() {
             @Override
@@ -172,7 +183,8 @@ public class InlineMethod implements Rewrite {
     }
 
     /** Whether every name in {@code expr} is one of {@code params}, with no calls/allocations. */
-    private static boolean referencesOnlyParams(Trees trees, TreePath exprPath, java.util.Set<Element> params) {
+    private static boolean referencesOnlyParams(
+            Trees trees, TreePath exprPath, java.util.Set<Element> params) {
         var ok = new boolean[] {true};
         new TreePathScanner<Void, Void>() {
             @Override
@@ -207,7 +219,6 @@ public class InlineMethod implements Rewrite {
         }.scan(exprPath, null);
         return ok[0];
     }
-
 
     private static boolean isPure(Tree expr) {
         var impure = new boolean[1];

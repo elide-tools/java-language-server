@@ -1,10 +1,12 @@
 package org.javacs.rewrite;
 
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.Map;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.Map;
 
 public class RenameVariable implements Rewrite {
     final Path file;

@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.logging.Logger;
+
 import javax.tools.*;
 
 class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
@@ -15,7 +16,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
 
     private static StandardJavaFileManager createDelegateFileManager() {
         var compiler = ServiceLoader.load(JavaCompiler.class).iterator().next();
-        return compiler.getStandardFileManager(SourceFileManager::logError, null, Charset.defaultCharset());
+        return compiler.getStandardFileManager(
+                SourceFileManager::logError, null, Charset.defaultCharset());
     }
 
     private static void logError(Diagnostic<?> error) {
@@ -24,7 +26,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
 
     @Override
     public Iterable<JavaFileObject> list(
-            Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse) throws IOException {
+            Location location, String packageName, Set<JavaFileObject.Kind> kinds, boolean recurse)
+            throws IOException {
         if (location == StandardLocation.SOURCE_PATH) {
             var stream = FileStore.list(packageName).stream().map(this::asJavaFileObject);
             return stream::iterator;
@@ -51,7 +54,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
     String getClassName(Path path) {
         var packageName = FileStore.packageName(path);
         var className = removeExtension(path.getFileName().toString());
-        if (packageName != null && !packageName.isEmpty()) className = packageName + "." + className;
+        if (packageName != null && !packageName.isEmpty())
+            className = packageName + "." + className;
         return className;
     }
 
@@ -66,8 +70,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
     }
 
     @Override
-    public JavaFileObject getJavaFileForInput(Location location, String className, JavaFileObject.Kind kind)
-            throws IOException {
+    public JavaFileObject getJavaFileForInput(
+            Location location, String className, JavaFileObject.Kind kind) throws IOException {
         // FileStore shadows disk
         if (location == StandardLocation.SOURCE_PATH) {
             var packageName = StringSearch.mostName(className);
@@ -83,7 +87,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
     }
 
     @Override
-    public FileObject getFileForInput(Location location, String packageName, String relativeName) throws IOException {
+    public FileObject getFileForInput(Location location, String packageName, String relativeName)
+            throws IOException {
         if (location == StandardLocation.SOURCE_PATH) {
             return null;
         }
@@ -104,7 +109,8 @@ class SourceFileManager extends ForwardingJavaFileManager<StandardJavaFileManage
         fileManager.setLocation(location, files);
     }
 
-    void setLocationFromPaths(Location location, Collection<? extends Path> searchpath) throws IOException {
+    void setLocationFromPaths(Location location, Collection<? extends Path> searchpath)
+            throws IOException {
         fileManager.setLocationFromPaths(location, searchpath);
     }
 

@@ -1,10 +1,11 @@
 package org.javacs.rewrite;
 
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.TextEdit;
+
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.TextEdit;
 
 public class RenameField implements Rewrite {
     final String className, fieldName, newName;

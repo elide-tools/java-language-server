@@ -2,16 +2,18 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.type.TypeMirror;
+
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.Map;
+
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Create a field for an undefined name that is assigned to. Used as a quick fix for "cannot find
@@ -19,8 +21,8 @@ import org.javacs.lsp.TextEdit;
  * {@code this.name = expr}); the field's type is inferred from the assigned expression.
  *
  * <p>The field is inserted as the first member of the enclosing class, {@code static} when the
- * assignment is in a static context. CANCELLED when the position is not such an assignment target or
- * the assigned type cannot be inferred.
+ * assignment is in a static context. CANCELLED when the position is not such an assignment target
+ * or the assigned type cannot be inferred.
  */
 public class CreateMissingField implements Rewrite {
     final Path file;
@@ -71,7 +73,11 @@ public class CreateMissingField implements Rewrite {
             var isStatic = false;
             for (var p = assignPath; p != null; p = p.getParentPath()) {
                 var leaf = p.getLeaf();
-                if (leaf instanceof MethodTree && ((MethodTree) leaf).getModifiers().getFlags().contains(Modifier.STATIC)) {
+                if (leaf instanceof MethodTree
+                        && ((MethodTree) leaf)
+                                .getModifiers()
+                                .getFlags()
+                                .contains(Modifier.STATIC)) {
                     isStatic = true;
                 }
                 if (leaf instanceof ClassTree) {
@@ -89,9 +95,17 @@ public class CreateMissingField implements Rewrite {
             var memberColumn = (int) lines.getColumnNumber(memberStart);
             var indent = " ".repeat(memberColumn - 1);
             var declaration =
-                    "private " + (isStatic ? "static " : "") + typeString(type) + " " + name + ";\n" + indent;
+                    "private "
+                            + (isStatic ? "static " : "")
+                            + typeString(type)
+                            + " "
+                            + name
+                            + ";\n"
+                            + indent;
             var insertPos = new Position(memberLine - 1, memberColumn - 1);
-            return Map.of(file, new TextEdit[] {new TextEdit(new Range(insertPos, insertPos), declaration)});
+            return Map.of(
+                    file,
+                    new TextEdit[] {new TextEdit(new Range(insertPos, insertPos), declaration)});
         }
     }
 
@@ -108,7 +122,8 @@ public class CreateMissingField implements Rewrite {
     }
 
     /** The innermost assignment whose left-hand side contains {@code position}. */
-    private static AssignmentTree assignmentTargetAt(CompilationUnitTree root, SourcePositions pos, int position) {
+    private static AssignmentTree assignmentTargetAt(
+            CompilationUnitTree root, SourcePositions pos, int position) {
         var result = new AssignmentTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {
@@ -127,7 +142,8 @@ public class CreateMissingField implements Rewrite {
         return result[0];
     }
 
-    private static Tree firstRealMember(CompilationUnitTree root, SourcePositions pos, ClassTree cls) {
+    private static Tree firstRealMember(
+            CompilationUnitTree root, SourcePositions pos, ClassTree cls) {
         for (var member : cls.getMembers()) {
             if (pos.getStartPosition(root, member) >= 0) return member;
         }

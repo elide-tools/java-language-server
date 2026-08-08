@@ -2,15 +2,17 @@ package org.javacs.rewrite;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Position;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class AutoAddOverrides implements Rewrite {
     private final Path file;
@@ -42,7 +44,8 @@ public class AutoAddOverrides implements Rewrite {
             insertText.append("@Override");
             insertText.append('\n');
             var insertPosition = new Position((int) insertLine - 1, 0);
-            var insert = new TextEdit(new Range(insertPosition, insertPosition), insertText.toString());
+            var insert =
+                    new TextEdit(new Range(insertPosition, insertPosition), insertText.toString());
             edits.add(insert);
         }
         return edits;

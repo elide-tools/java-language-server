@@ -5,18 +5,20 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.UnaryTree;
 import com.sun.source.util.TreePath;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.DocumentHighlight;
 import org.javacs.lsp.DocumentHighlightKind;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * `textDocument/documentHighlight`: highlight every occurrence of the symbol
- * under the cursor within the current file, classified read vs write. Reuses
- * {@link FindReferences} scoped to the single compilation unit.
+ * `textDocument/documentHighlight`: highlight every occurrence of the symbol under the cursor
+ * within the current file, classified read vs write. Reuses {@link FindReferences} scoped to the
+ * single compilation unit.
  */
 public class DocumentHighlightProvider {
     private final CompilerProvider compiler;
@@ -59,7 +61,8 @@ public class DocumentHighlightProvider {
         if (up instanceof AssignmentTree && ((AssignmentTree) up).getVariable() == leaf) {
             return DocumentHighlightKind.Write;
         }
-        if (up instanceof CompoundAssignmentTree && ((CompoundAssignmentTree) up).getVariable() == leaf) {
+        if (up instanceof CompoundAssignmentTree
+                && ((CompoundAssignmentTree) up).getVariable() == leaf) {
             return DocumentHighlightKind.Write;
         }
         if (up instanceof UnaryTree) {

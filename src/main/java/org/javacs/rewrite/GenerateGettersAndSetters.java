@@ -4,16 +4,19 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.Trees;
+
+import org.javacs.CompileTask;
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.lang.model.element.Modifier;
-import org.javacs.CompileTask;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 /** Generate a getter and setter for every non-static field of a class. */
 public class GenerateGettersAndSetters implements Rewrite {
@@ -42,12 +45,20 @@ public class GenerateGettersAndSetters implements Rewrite {
                 buf.append("    return ").append(name).append(";\n");
                 buf.append("}\n");
                 buf.append("\n");
-                buf.append("public void set").append(cap).append("(").append(type).append(" ").append(name).append(") {\n");
+                buf.append("public void set")
+                        .append(cap)
+                        .append("(")
+                        .append(type)
+                        .append(" ")
+                        .append(name)
+                        .append(") {\n");
                 buf.append("    this.").append(name).append(" = ").append(name).append(";\n");
                 buf.append("}\n");
             }
             var indent = EditHelper.indent(task.task, task.root(), typeTree) + 4;
-            var string = buf.toString().replaceAll("\n", "\n" + " ".repeat(indent)).stripTrailing() + "\n";
+            var string =
+                    buf.toString().replaceAll("\n", "\n" + " ".repeat(indent)).stripTrailing()
+                            + "\n";
             var insert = EditHelper.insertAtEndOfClass(task.task, task.root(), typeTree);
             TextEdit[] edits = {new TextEdit(new Range(insert, insert), string)};
             return Map.of(file, edits);

@@ -10,15 +10,18 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.StringJoiner;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.lsp.Range;
 import org.javacs.lsp.TextEdit;
+
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.StringJoiner;
+
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 
 public class CreateMissingMethod implements Rewrite {
     final Path file;
@@ -41,7 +44,8 @@ public class CreateMissingMethod implements Rewrite {
             var indent = EditHelper.indent(task.task, task.root(), surroundingClass) + 4;
             insertText = insertText.replaceAll("\n", "\n" + " ".repeat(indent));
             insertText = insertText + "\n";
-            var insertPoint = EditHelper.insertAfter(task.task, task.root(), surroundingMethod(path));
+            var insertPoint =
+                    EditHelper.insertAfter(task.task, task.root(), surroundingMethod(path));
             TextEdit[] edits = {new TextEdit(new Range(insertPoint, insertPoint), insertText)};
             return Map.of(file, edits);
         }

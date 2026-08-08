@@ -1,14 +1,17 @@
 package org.javacs.navigation;
 
 import com.sun.source.util.TreePath;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.TypeElement;
+
 import org.javacs.CompileTask;
 import org.javacs.CompilerProvider;
 import org.javacs.FindHelper;
 import org.javacs.lsp.Location;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.lang.model.element.TypeElement;
 
 public class ReferenceProvider {
     private final CompilerProvider compiler;

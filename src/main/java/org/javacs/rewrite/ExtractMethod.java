@@ -2,6 +2,13 @@ package org.javacs.rewrite;
 
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+
+import org.javacs.CompileTask;
+import org.javacs.CompilerProvider;
+import org.javacs.lsp.Position;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -9,15 +16,10 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
-import org.javacs.CompileTask;
-import org.javacs.CompilerProvider;
-import org.javacs.lsp.Position;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 /**
  * Extract the consecutive statements selected by [start, end) into a new private method and replace
@@ -140,7 +142,8 @@ public class ExtractMethod implements Rewrite {
 
         var outVars = new LinkedHashSet<Element>();
         for (var el : declaredInSel) if (usedAfter.contains(el)) outVars.add(el);
-        for (var el : assignedInSel) if (!declaredInSel.contains(el) && usedAfter.contains(el)) outVars.add(el);
+        for (var el : assignedInSel)
+            if (!declaredInSel.contains(el) && usedAfter.contains(el)) outVars.add(el);
         if (outVars.size() > 1) return null;
         var outVar = outVars.isEmpty() ? null : outVars.iterator().next();
 
@@ -176,7 +179,11 @@ public class ExtractMethod implements Rewrite {
         m.append(returnType).append(" ").append(NAME).append("(").append(params).append(") {\n");
         m.append(bodyIndent).append(rawSelected);
         if (outVar != null) {
-            m.append("\n").append(bodyIndent).append("return ").append(outVar.getSimpleName()).append(";");
+            m.append("\n")
+                    .append(bodyIndent)
+                    .append("return ")
+                    .append(outVar.getSimpleName())
+                    .append(";");
         }
         m.append("\n").append(methodIndent).append("}");
 
@@ -184,12 +191,22 @@ public class ExtractMethod implements Rewrite {
         if (outVar == null) {
             call = NAME + "(" + args + ");";
         } else if (declaredInSel.contains(outVar)) {
-            call = typeString(outVar.asType()) + " " + outVar.getSimpleName() + " = " + NAME + "(" + args + ");";
+            call =
+                    typeString(outVar.asType())
+                            + " "
+                            + outVar.getSimpleName()
+                            + " = "
+                            + NAME
+                            + "("
+                            + args
+                            + ");";
         } else {
             call = outVar.getSimpleName() + " = " + NAME + "(" + args + ");";
         }
 
-        var replace = new TextEdit(new Range(offset(lines, firstOffset), offset(lines, lastOffset)), call);
+        var replace =
+                new TextEdit(
+                        new Range(offset(lines, firstOffset), offset(lines, lastOffset)), call);
         var insertOffset = pos.getEndPosition(root, method);
         var insertPos = offset(lines, insertOffset);
         var insert = new TextEdit(new Range(insertPos, insertPos), "\n\n" + methodIndent + m);
@@ -214,7 +231,8 @@ public class ExtractMethod implements Rewrite {
     }
 
     /** The innermost method whose body span contains the selection, or null. */
-    private static MethodTree enclosingMethod(CompilationUnitTree root, SourcePositions pos, int start, int end) {
+    private static MethodTree enclosingMethod(
+            CompilationUnitTree root, SourcePositions pos, int start, int end) {
         var result = new MethodTree[1];
         var best = new long[] {Long.MAX_VALUE};
         new TreeScanner<Void, Void>() {

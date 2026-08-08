@@ -1,9 +1,10 @@
 package org.javacs;
 
+import org.javacs.lsp.*;
+
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.javacs.lsp.*;
 
 public class Main {
     private static final Logger LOG = Logger.getLogger("main");

@@ -6,8 +6,14 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.Trees;
+
+import org.javacs.lsp.Position;
+import org.javacs.lsp.Range;
+import org.javacs.lsp.TextEdit;
+
 import java.util.List;
 import java.util.StringJoiner;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -15,9 +21,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
-import org.javacs.lsp.Position;
-import org.javacs.lsp.Range;
-import org.javacs.lsp.TextEdit;
 
 class EditHelper {
     final JavacTask task;
@@ -41,7 +44,8 @@ class EditHelper {
         return new TextEdit(range, "");
     }
 
-    static String printMethod(ExecutableElement method, ExecutableType parameterizedType, MethodTree source) {
+    static String printMethod(
+            ExecutableElement method, ExecutableType parameterizedType, MethodTree source) {
         var buf = new StringBuilder();
         // TODO leading \n is extra, but needed for indent replaceAll trick
         buf.append("\n@Override\n");
@@ -94,7 +98,9 @@ class EditHelper {
 
     static String printTypeName(TypeElement type) {
         if (type.getEnclosingElement() instanceof TypeElement) {
-            return printTypeName((TypeElement) type.getEnclosingElement()) + "." + type.getSimpleName();
+            return printTypeName((TypeElement) type.getEnclosingElement())
+                    + "."
+                    + type.getSimpleName();
         }
         return type.getSimpleName().toString();
     }

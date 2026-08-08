@@ -7,11 +7,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
+
 import javax.tools.*;
 
 public class Docs {
 
-    /** File manager with source-path + platform sources, which we will use to look up individual source files */
+    /**
+     * File manager with source-path + platform sources, which we will use to look up individual
+     * source files
+     */
     final SourceFileManager fileManager = new SourceFileManager();
 
     Docs(Set<Path> docPath) {
@@ -24,7 +28,8 @@ public class Docs {
         try {
             fileManager.setLocationFromPaths(StandardLocation.SOURCE_PATH, sourcePath);
             if (srcZipPath != NOT_FOUND) {
-                fileManager.setLocationFromPaths(StandardLocation.MODULE_SOURCE_PATH, Set.of(srcZipPath));
+                fileManager.setLocationFromPaths(
+                        StandardLocation.MODULE_SOURCE_PATH, Set.of(srcZipPath));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
