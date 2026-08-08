@@ -536,3 +536,24 @@ languages add additively), JLS vendors as source into an isolated root, and the
 build delta is just 4 `--add-exports` + 1 `--add-opens` — most javac exports,
 `AllowJRTFileSystem`, jrtfs/zipfs, and the `SystemImage` substitution already
 ship in Elide's image.
+
+## Embedding SPI (2026-08-08) — the JAR-vendor pivot
+
+The Elide fold now vendors the **prebuilt jar** instead of source (new plan: aura
+`docs/superpowers/plans/2026-08-08-jls-vendor-jar.md`), so the fork exposes a
+stable embedding contract rather than being patched in Elide's tree:
+
+- `org.javacs.embed.ClasspathProvider` — host supplies the resolved compile/doc
+  classpath; `JavaLanguageServer.createCompiler()` uses it verbatim and skips
+  `InferConfig` (Elide injects its Maven/Aether resolver).
+- `org.javacs.embed.JavaFormatter` — host supplies a real formatter;
+  `JavaLanguageServer.formatting()` delegates to it (Elide injects
+  google-java-format). Default (no SPI) = built-in import-fix/add-overrides edits.
+- `org.javacs.embed.Embedding.serverFactory(cp, fmt)` / `connect(in, out, cp, fmt)`
+  — construct + run the server over caller streams, with no root-logger mutation
+  and no `System.exit`. `JavaLanguageServer` is now `public`.
+- Both SPIs default to null, so standalone JLS behavior is unchanged.
+
+Bazel classpath inference (the only `protobuf-java` user) was removed; the jar's
+runtime footprint is **gson only**. Landed: `efce8159` (SPI), `09a66e51` (drop
+Bazel/protobuf), `85fd8604` (format). Standalone native build + full suite green.
