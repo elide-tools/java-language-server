@@ -1,8 +1,5 @@
 package org.javacs;
 
-import com.google.devtools.build.lib.analysis.AnalysisProtos;
-import com.google.devtools.build.lib.analysis.AnalysisProtosV2;
-import com.google.devtools.build.lib.analysis.AnalysisProtosV2.PathFragment;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -12,8 +9,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors; // Added for Collectors.toSet()
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 class InferConfig {
     private static final Logger LOG = Logger.getLogger("main");
@@ -67,7 +63,7 @@ class InferConfig {
         return Paths.get(System.getProperty("user.home")).resolve(".gradle");
     }
 
-    /** Find .jar files for external dependencies, for examples maven dependencies in ~/.m2 or jars in bazel-genfiles */
+    /** Find .jar files for external dependencies, for example maven dependencies in ~/.m2. */
     Set<Path> classPath() {
         // Check for CLASSPATH environment variable first
         String classPathEnv = this.envVars.get("CLASSPATH");
@@ -75,8 +71,8 @@ class InferConfig {
             // TODO Add source/doc discovery for arbitrary jars provided via CLASSPATH.
             LOG.info("Using CLASSPATH environment variable: " + classPathEnv);
             return Arrays.stream(classPathEnv.split(Pattern.quote(File.pathSeparator)))
-                         .map(Paths::get)
-                         .collect(Collectors.toSet());
+                    .map(Paths::get)
+                    .collect(Collectors.toSet());
         }
 
         // externalDependencies
@@ -100,22 +96,7 @@ class InferConfig {
             return mvnDependencies(pomXml, "dependency:list", this.envVars);
         }
 
-        // Bazel
-        var bazelWorkspaceRoot = bazelWorkspaceRoot();
-        if (Files.exists(bazelWorkspaceRoot.resolve("WORKSPACE"))) {
-            return bazelClasspath(bazelWorkspaceRoot);
-        }
-
         return Collections.emptySet();
-    }
-
-    private Path bazelWorkspaceRoot() {
-        for (var current = workspaceRoot; current != null; current = current.getParent()) {
-            if (Files.exists(current.resolve("WORKSPACE"))) {
-                return current;
-            }
-        }
-        return workspaceRoot;
     }
 
     /** Find source .jar files in local maven repository. */
@@ -139,12 +120,6 @@ class InferConfig {
         var pomXml = workspaceRoot.resolve("pom.xml");
         if (Files.exists(pomXml)) {
             return mvnDependencies(pomXml, "dependency:sources", this.envVars);
-        }
-
-        // Bazel
-        var bazelWorkspaceRoot = bazelWorkspaceRoot();
-        if (Files.exists(bazelWorkspaceRoot.resolve("WORKSPACE"))) {
-            return bazelSourcepath(bazelWorkspaceRoot);
         }
 
         return Collections.emptySet();
@@ -284,256 +259,6 @@ class InferConfig {
             }
         }
         return null;
-    }
-
-    private boolean buildProtos(Path bazelWorkspaceRoot) {
-        var targets = bazelQuery(bazelWorkspaceRoot, "java_proto_library");
-        if (targets.size() == 0) {
-            return false;
-        }
-        bazelDryRunBuild(bazelWorkspaceRoot, targets);
-        return true;
-    }
-
-    private Set<Path> bazelClasspath(Path bazelWorkspaceRoot) {
-        var absolute = new HashSet<Path>();
-
-        // Add protos
-        if (buildProtos(bazelWorkspaceRoot)) {
-            for (var relative : bazelAQuery(bazelWorkspaceRoot, "Javac", "--output", "proto_library")) {
-                absolute.add(bazelWorkspaceRoot.resolve(relative));
-            }
-        }
-
-        // Add rest of classpath
-        for (var relative :
-                bazelAQuery(bazelWorkspaceRoot, "Javac", "--classpath", "java_library", "java_test", "java_binary")) {
-            absolute.add(bazelWorkspaceRoot.resolve(relative));
-        }
-        return absolute;
-    }
-
-    private Set<Path> bazelSourcepath(Path bazelWorkspaceRoot) {
-        var absolute = new HashSet<Path>();
-        var outputBase = bazelOutputBase(bazelWorkspaceRoot);
-        for (var relative :
-                bazelAQuery(
-                        bazelWorkspaceRoot, "JavaSourceJar", "--sources", "java_library", "java_test", "java_binary")) {
-            absolute.add(outputBase.resolve(relative));
-        }
-
-        // Add proto source files
-        if (buildProtos(bazelWorkspaceRoot)) {
-            for (var relative : bazelAQuery(bazelWorkspaceRoot, "Javac", "--source_jars", "proto_library")) {
-                absolute.add(bazelWorkspaceRoot.resolve(relative));
-            }
-        }
-
-        return absolute;
-    }
-
-    private Path bazelOutputBase(Path bazelWorkspaceRoot) {
-        // Run bazel as a subprocess
-        String[] command = {
-            "bazel", "info", "output_base",
-        };
-        var output = fork(bazelWorkspaceRoot, command, false);
-        if (output == NOT_FOUND) {
-            return NOT_FOUND;
-        }
-        // Read output
-        try {
-            var out = Files.readString(output).trim();
-            return Paths.get(out);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void bazelDryRunBuild(Path bazelWorkspaceRoot, Set<String> targets) {
-        var command = new ArrayList<String>();
-        command.add("bazel");
-        command.add("build");
-        command.add("--keep_going");
-        command.add("--nobuild");
-        command.addAll(targets);
-        String[] c = new String[command.size()];
-        c = command.toArray(c);
-        var output = fork(bazelWorkspaceRoot, c, true);
-        if (output == NOT_FOUND) {
-            return;
-        }
-        return;
-    }
-
-    private Set<String> bazelQuery(Path bazelWorkspaceRoot, String filterKind) {
-        String[] command = {"bazel", "query", "--keep_going", "kind(" + filterKind + ",//...)"};
-        var output = fork(bazelWorkspaceRoot, command, true);
-        if (output == NOT_FOUND) {
-            return Set.of();
-        }
-        return readQueryResult(output);
-    }
-
-    private Set<String> readQueryResult(Path output) {
-        try {
-            Stream<String> stream = Files.lines(output);
-            var targets = new HashSet<String>();
-            var i = stream.iterator();
-            while (i.hasNext()) {
-                var t = i.next();
-                targets.add(t);
-            }
-            return targets;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Set<String> bazelAQuery(
-            Path bazelWorkspaceRoot, String filterMnemonic, String filterArgument, String... kinds) {
-        String kindUnion = "";
-        for (var kind : kinds) {
-            if (kindUnion.length() > 0) {
-                kindUnion += " union ";
-            }
-            kindUnion += "kind(" + kind + ", ...)";
-        }
-        String[] command = {
-            "bazel",
-            "aquery",
-            "--keep_going",
-            "--output=proto",
-            "--include_aspects", // required for java_proto_library, see
-            // https://stackoverflow.com/questions/63430530/bazel-aquery-returns-no-action-information-for-java-proto-library
-            "--allow_analysis_failures",
-            "mnemonic(" + filterMnemonic + ", " + kindUnion + ")"
-        };
-        var output = fork(bazelWorkspaceRoot, command, true);
-        if (output == NOT_FOUND) {
-            return Set.of();
-        }
-        return readActionGraph(output, filterArgument);
-    }
-
-    private Set<String> readActionGraph(Path output, String filterArgument) {
-        try {
-            var containerV2 = AnalysisProtosV2.ActionGraphContainer.parseFrom(Files.newInputStream(output));
-            if (containerV2.getArtifactsCount() != 0 && containerV2.getArtifactsList().get(0).getId() != 0) {
-                return readActionGraphFromV2(containerV2, filterArgument);
-            }
-            var containerV1 = AnalysisProtos.ActionGraphContainer.parseFrom(Files.newInputStream(output));
-            return readActionGraphFromV1(containerV1, filterArgument);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Set<String> readActionGraphFromV1(AnalysisProtos.ActionGraphContainer container, String filterArgument) {
-        var argumentPaths = new HashSet<String>();
-        var outputIds = new HashSet<String>();
-        for (var action : container.getActionsList()) {
-            var isFilterArgument = false;
-            for (var argument : action.getArgumentsList()) {
-                if (isFilterArgument && argument.startsWith("-")) {
-                    isFilterArgument = false;
-                    continue;
-                }
-                if (!isFilterArgument) {
-                    isFilterArgument = argument.equals(filterArgument);
-                    continue;
-                }
-                argumentPaths.add(argument);
-            }
-            outputIds.addAll(action.getOutputIdsList());
-        }
-        var artifactPaths = new HashSet<String>();
-        for (var artifact : container.getArtifactsList()) {
-            if (!argumentPaths.contains(artifact.getExecPath())) {
-                // artifact was not specified by --filterArgument
-                continue;
-            }
-            if (outputIds.contains(artifact.getId()) && !filterArgument.equals("--output")) {
-                // artifact is the output of another java action
-                continue;
-            }
-            var relative = artifact.getExecPath();
-            LOG.info("...found bazel dependency " + relative);
-            artifactPaths.add(relative);
-        }
-        return artifactPaths;
-    }
-
-    private Set<String> readActionGraphFromV2(AnalysisProtosV2.ActionGraphContainer container, String filterArgument) {
-        var argumentPaths = new HashSet<String>();
-        var outputIds = new HashSet<Integer>();
-        for (var action : container.getActionsList()) {
-            var isFilterArgument = false;
-            for (var argument : action.getArgumentsList()) {
-                if (isFilterArgument && argument.startsWith("-")) {
-                    isFilterArgument = false;
-                    continue;
-                }
-                if (!isFilterArgument) {
-                    isFilterArgument = argument.equals(filterArgument);
-                    continue;
-                }
-                argumentPaths.add(argument);
-            }
-            outputIds.addAll(action.getOutputIdsList());
-        }
-        var artifactPaths = new HashSet<String>();
-        for (var artifact : container.getArtifactsList()) {
-            if (outputIds.contains(artifact.getId()) && !filterArgument.equals("--output")) {
-                // artifact is the output of another java action
-                continue;
-            }
-            var relative = buildPath(container.getPathFragmentsList(), artifact.getPathFragmentId());
-            if (!argumentPaths.contains(relative)) {
-                // artifact was not specified by --filterArgument
-                continue;
-            }
-            LOG.info("...found bazel dependency " + relative);
-            artifactPaths.add(relative);
-        }
-        return artifactPaths;
-    }
-
-    private static String buildPath(List<PathFragment> fragments, int id) {
-        for (PathFragment fragment : fragments) {
-            if (fragment.getId() == id) {
-                if (fragment.getParentId() != 0) {
-                    return buildPath(fragments, fragment.getParentId()) + "/" + fragment.getLabel();
-                }
-                return fragment.getLabel();
-            }
-        }
-        throw new RuntimeException();
-    }
-
-    private static Path fork(Path workspaceRoot, String[] command, boolean allowNonZeroExit) {
-        try {
-            LOG.info("Running " + String.join(" ", command) + " ...");
-            var output = Files.createTempFile("java-language-server-bazel-output", ".proto");
-            var process =
-                    new ProcessBuilder()
-                            .command(command)
-                            .directory(workspaceRoot.toFile())
-                            .redirectError(ProcessBuilder.Redirect.INHERIT)
-                            .redirectOutput(output.toFile())
-                            .start();
-            // Wait for process to exit
-            var result = process.waitFor();
-            if (result != 0) {
-                LOG.severe("`" + String.join(" ", command) + "` returned " + result);
-                if (!allowNonZeroExit) {
-                    return NOT_FOUND;
-                }
-            }
-            return output;
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private static final Path NOT_FOUND = Paths.get("");
