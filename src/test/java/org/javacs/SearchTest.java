@@ -91,4 +91,14 @@ public class SearchTest {
 
         assertThat("includes explicit constructor", all, hasItem("ReferenceConstructor"));
     }
+
+    @Test
+    public void symbolsInFileWithRecord() {
+        // A nested record used to NPE the whole documentSymbol request: SymbolInformation.kind is
+        // a primitive int and RECORD was missing from the kind mapping (elide-dev/WHIPLASH#1652).
+        var path = "/org/javacs/example/SymbolsWithRecord.java";
+        var all = searchFile(FindResource.uri(path));
+
+        assertThat(all, hasItems("SymbolsWithRecord", "Coordinate", "useRecord"));
+    }
 }

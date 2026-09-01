@@ -35,10 +35,14 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
 
     @Override
     public Void visitClass(ClassTree t, List<SymbolInformation> list) {
-        if (StringSearch.matchesTitleCase(t.getSimpleName(), query)) {
+        // `SymbolInformation.kind` is a primitive int, so a kind this scanner does not map must be
+        // skipped, not assigned: unboxing null NPEd on every file containing a record and killed
+        // the whole documentSymbol request (elide-dev/WHIPLASH#1652).
+        var kind = asSymbolKind(t.getKind());
+        if (kind != null && StringSearch.matchesTitleCase(t.getSimpleName(), query)) {
             var info = new SymbolInformation();
             info.name = t.getSimpleName().toString();
-            info.kind = asSymbolKind(t.getKind());
+            info.kind = kind;
             info.location = location(t);
             info.containerName = containerName.toString();
             list.add(info);
@@ -90,6 +94,8 @@ class FindSymbolsMatching extends TreePathScanner<Void, List<SymbolInformation>>
             case ANNOTATION_TYPE:
             case CLASS:
                 return SymbolKind.Class;
+            case RECORD:
+                return SymbolKind.Struct;
             case ENUM:
                 return SymbolKind.Enum;
             case INTERFACE:

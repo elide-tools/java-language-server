@@ -605,12 +605,13 @@ public class LSP {
                                 String.format("Don't know what to do with method `%s`", r.method));
                 }
             } catch (Exception e) {
-                LOG.log(Level.SEVERE, e.getMessage(), e);
+                // `getMessage()` is null for a bare NPE and gson drops null fields, so the client
+                // would receive `{"code":-32603}` with no `message` at all; always send something
+                // diagnosable (elide-dev/WHIPLASH#1652).
+                var message = e.getMessage() != null ? e.getMessage() : e.toString();
+                LOG.log(Level.SEVERE, message, e);
                 if (r.id != null) {
-                    error(
-                            send,
-                            r.id,
-                            new ResponseError(ErrorCodes.InternalError, e.getMessage(), null));
+                    error(send, r.id, new ResponseError(ErrorCodes.InternalError, message, null));
                 }
             }
         }
