@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.HashMap; // For mock environment variables
 import java.util.Map; // For mock environment variables
 import java.util.Set;
+import java.util.function.Supplier;
 import org.junit.Test;
 
 public class InferConfigTest {
@@ -81,7 +82,11 @@ public class InferConfigTest {
 
     @Test
     public void dependencyList() {
-        assertThat(InferConfig.mvnDependencies(Paths.get("pom.xml"), "dependency:list", null), not(empty()));
+        var pom = Paths.get("pom.xml");
+        assertThat(
+                withBuildToolInference(
+                        () -> InferConfig.mvnDependencies(pom, "dependency:list", null)),
+                not(empty()));
     }
 
     @Test
@@ -90,7 +95,7 @@ public class InferConfigTest {
         // or explicitly pass null for the env map.
         InferConfig currentTestProject = new InferConfig(Paths.get("."), (Map<String, String>) null);
         assertThat(
-                currentTestProject.classPath(),
+                withBuildToolInference(currentTestProject::classPath),
                 hasItem(hasToString(endsWith(".m2/repository/junit/junit/4.13.1/junit-4.13.1.jar"))));
     }
 
@@ -99,8 +104,17 @@ public class InferConfigTest {
         // Re-initialize thisProject for the same reasons as above.
         InferConfig currentTestProject = new InferConfig(Paths.get("."), (Map<String, String>) null);
         assertThat(
-                currentTestProject.buildDocPath(),
+                withBuildToolInference(currentTestProject::buildDocPath),
                 hasItem(hasToString(endsWith(".m2/repository/junit/junit/4.13.1/junit-4.13.1-sources.jar"))));
+    }
+
+    private static <T> T withBuildToolInference(Supplier<T> body) {
+        System.setProperty(InferConfig.INFER_BUILD_TOOLS, "true");
+        try {
+            return body.get();
+        } finally {
+            System.clearProperty(InferConfig.INFER_BUILD_TOOLS);
+        }
     }
 
     @Test

@@ -6,8 +6,8 @@ import java.util.Set;
 /**
  * Supplies the compile classpath (and documentation/source path) for a workspace, letting an
  * embedding host — e.g. Elide — inject a resolved dependency set instead of the built-in {@code
- * InferConfig} inference ({@code ~/.m2}/{@code ~/.gradle} scavenging and {@code mvn
- * dependency:list} subprocesses).
+ * InferConfig} inference ({@code ~/.m2}/{@code ~/.gradle} scavenging, plus {@code mvn
+ * dependency:list} subprocesses only under {@code -Djavacs.inferBuildTools=true}).
  *
  * <p>When {@link #classpath} returns a non-empty set the server uses it verbatim and never runs
  * inference; an empty set defers to the built-in behavior.

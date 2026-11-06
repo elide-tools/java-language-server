@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 class InferConfig {
     private static final Logger LOG = Logger.getLogger("main");
 
+    /** Opt-in: running a workspace's build tool executes code from that workspace. */
+    static final String INFER_BUILD_TOOLS = "javacs.inferBuildTools";
+
     /** Root of the workspace that is currently open in VSCode */
     private final Path workspaceRoot;
 
@@ -203,6 +206,10 @@ class InferConfig {
 
     static Set<Path> mvnDependencies(Path pomXml, String goal, Map<String, String> envVars) {
         Objects.requireNonNull(pomXml, "pom.xml path is null");
+        if (!Boolean.getBoolean(INFER_BUILD_TOOLS)) {
+            LOG.info("Not running mvn for " + pomXml + "; set -D" + INFER_BUILD_TOOLS + "=true");
+            return Set.of();
+        }
         try {
             // TODO consider using mvn valide dependency:copy-dependencies -DoutputDirectory=???
             // instead
