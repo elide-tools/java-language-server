@@ -253,10 +253,20 @@ class JavaCompilerService implements CompilerProvider {
 
     private Optional<JavaFileObject> findPublicTypeDeclarationInDocPath(String className) {
         try {
-            var found =
-                    docs.fileManager.getJavaFileForInput(
-                            StandardLocation.SOURCE_PATH, className, JavaFileObject.Kind.SOURCE);
-            return Optional.ofNullable(found);
+            // Nested types live in their outermost type's source file (for example R.string in
+            // R.java).
+            var candidate = className;
+            while (true) {
+                var found =
+                        docs.fileManager.getJavaFileForInput(
+                                StandardLocation.SOURCE_PATH,
+                                candidate,
+                                JavaFileObject.Kind.SOURCE);
+                if (found != null) return Optional.of(found);
+                var dot = candidate.lastIndexOf('.');
+                if (dot < 0) return Optional.empty();
+                candidate = candidate.substring(0, dot);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
