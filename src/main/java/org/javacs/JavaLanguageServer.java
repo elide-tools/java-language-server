@@ -228,10 +228,38 @@ public class JavaLanguageServer extends LanguageServer {
         return strings;
     }
 
+    /** Host-selected files, or null to discover the workspace. Empty is authoritative. */
+    protected Collection<Path> workspaceSourceFiles(Path root) {
+        return null;
+    }
+
+    /** Whether a filesystem notification belongs to the host-selected source sets. */
+    protected boolean isWorkspaceSource(Path file) {
+        return true;
+    }
+
+    /** Additional host project files whose changes require a new source selection. */
+    protected String[] workspaceSourceWatchPatterns() {
+        return new String[0];
+    }
+
+    protected boolean workspaceSourceConfigurationChanged(Path file) {
+        return false;
+    }
+
+    private void refreshWorkspaceSources() {
+        var sources = workspaceSourceFiles(workspaceRoot);
+        if (sources == null) {
+            FileStore.setWorkspaceFiles(List.of());
+            FileStore.setWorkspaceRoots(Set.of(workspaceRoot));
+        } else FileStore.setWorkspaceFiles(sources);
+        modifiedBuild = true;
+    }
+
     @Override
     public InitializeResult initialize(InitializeParams params) {
         this.workspaceRoot = Paths.get(params.rootUri);
-        FileStore.setWorkspaceRoots(Set.of(Paths.get(params.rootUri)));
+        refreshWorkspaceSources();
 
         var c = new JsonObject();
         c.addProperty("textDocumentSync", 2); // Incremental
@@ -300,7 +328,10 @@ public class JavaLanguageServer extends LanguageServer {
 
     @Override
     public void initialized() {
-        client.registerCapability("workspace/didChangeWatchedFiles", watchFiles(watchFiles));
+        var patterns = new ArrayList<String>(Arrays.asList(watchFiles));
+        patterns.addAll(Arrays.asList(workspaceSourceWatchPatterns()));
+        client.registerCapability(
+                "workspace/didChangeWatchedFiles", watchFiles(patterns.toArray(String[]::new)));
     }
 
     private JsonObject watchFiles(String... globPatterns) {
@@ -345,7 +376,12 @@ public class JavaLanguageServer extends LanguageServer {
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
         for (var c : params.changes) {
             var file = Paths.get(c.uri);
+            if (workspaceSourceConfigurationChanged(file)) {
+                refreshWorkspaceSources();
+                continue;
+            }
             if (FileStore.isJavaFile(file)) {
+                if (!isWorkspaceSource(file)) continue;
                 switch (c.type) {
                     case FileChangeType.Created:
                         FileStore.externalCreate(file);

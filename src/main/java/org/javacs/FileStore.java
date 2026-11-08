@@ -52,6 +52,15 @@ public class FileStore {
         workspaceRoots.addAll(newRoots);
     }
 
+    static void setWorkspaceFiles(Collection<Path> files) {
+        workspaceRoots.clear();
+        javaSources.clear();
+        for (var file : files) {
+            var normalized = file.toAbsolutePath().normalize();
+            if (isJavaFile(normalized)) readInfoFromDisk(normalized);
+        }
+    }
+
     private static Set<Path> normalize(Set<Path> newRoots) {
         var normalize = new HashSet<Path>();
         for (var root : newRoots) {
