@@ -62,15 +62,41 @@ public class FileStore {
 
     private static void addFiles(Path root) {
         try {
-            Files.walkFileTree(root, new FindJavaSources());
+            Files.walkFileTree(root, new FindJavaSources(root));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     static class FindJavaSources extends SimpleFileVisitor<Path> {
+        private final Path root;
+        private static final Set<String> CACHE_DIRECTORIES =
+                Set.of(".git", ".hg", ".svn", ".cache", ".gradle", ".m2", "node_modules");
+        private static final Set<String> ELIDE_CACHE_DIRECTORIES =
+                Set.of(
+                        "artifacts",
+                        "dependencies",
+                        "scratch",
+                        "toolchains",
+                        "reports",
+                        "worktree-archive");
+
+        FindJavaSources(Path root) {
+            this.root = root;
+        }
+
+        private boolean isCacheDirectory(Path dir) {
+            // An explicitly selected workspace is always indexed, even inside a cache.
+            if (dir.equals(root)) return false;
+            var name = dir.getFileName().toString();
+            if (CACHE_DIRECTORIES.contains(name)) return true;
+            // Preserve generated sources (.dev/codegen, build/generated, target/generated-sources).
+            return dir.getParent().endsWith(".dev") && ELIDE_CACHE_DIRECTORIES.contains(name);
+        }
+
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            if (isCacheDirectory(dir)) return FileVisitResult.SKIP_SUBTREE;
             if (attrs.isSymbolicLink()) {
                 LOG.warning("Don't check " + dir + " for java sources");
                 return FileVisitResult.SKIP_SUBTREE;
