@@ -381,7 +381,7 @@ public class JavaLanguageServer extends LanguageServer {
                 continue;
             }
             if (FileStore.isJavaFile(file)) {
-                if (!isWorkspaceSource(file)) continue;
+                if (c.type != FileChangeType.Deleted && !isWorkspaceSource(file)) continue;
                 switch (c.type) {
                     case FileChangeType.Created:
                         FileStore.externalCreate(file);

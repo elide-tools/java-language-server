@@ -113,6 +113,22 @@ public class HostWorkspaceSourcesTest {
     }
 
     @Test
+    public void deletionRemovesPreviouslySelectedFilesOutsideCurrentMembership() throws Exception {
+        var root = temporary.newFolder().toPath();
+        var previous = source(root, "previous/HostFixtureDeleted");
+        var server = server(root, List.of(previous));
+        assertEquals(Set.of("HostFixtureDeleted"), names(server));
+        Files.delete(previous);
+        var event = new FileEvent();
+        event.uri = previous.toUri();
+        event.type = FileChangeType.Deleted;
+        var params = new DidChangeWatchedFilesParams();
+        params.changes = List.of(event);
+        server.didChangeWatchedFiles(params);
+        assertEquals(Set.of(), names(server));
+    }
+
+    @Test
     public void emptySelectionDoesNotFallBackToWorkspaceScan() throws Exception {
         var root = temporary.newFolder().toPath();
         source(root, "HostFixtureOutside");
